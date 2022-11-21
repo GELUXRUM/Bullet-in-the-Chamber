@@ -1,0 +1,265 @@
+Scriptname BitCh_ReloadExpanded Extends Quest
+
+;--------------------------------------------------------------------
+; PROPERTY GROUPS
+;--------------------------------------------------------------------
+
+Group Actors
+    Actor Property PlayerRef Auto
+EndGroup
+
+Group MCM
+    Bool Property AllowBulletsInTheChamber = True Auto
+    Bool Property BitChTRCompat = False Auto
+    Bool Property AllowAmmoDrop = False Auto
+	Bool Property DeleteAmmoDrop = False Auto
+    Bool Property BitChBCRCompat = False Auto
+EndGroup
+
+Group Keywords
+    ; for weapons that can make use of BitCh but do not have TR
+	Keyword Property ForceBitChReload Auto
+    ; for weapons that can hold extra ammo in the chamber
+	Keyword Property ChamberedReload Auto
+	; for weapons that can't hold extra ammo in the chamber
+	Keyword Property DisableChamberedReload Auto
+	; for weapons that can't drop ammo on reload
+	Keyword Property CantDropAmmo Auto
+EndGroup
+
+;--------------------------------------------------------------------
+; VARIABLES
+;--------------------------------------------------------------------
+
+; Tactical Reload keyword
+Keyword AnimsReloadReserve
+
+;--------------------------------------------------------------------
+; EVENTS
+;--------------------------------------------------------------------
+
+Event OnInit()
+    ; event for when reload starts
+    RegisterForAnimationEvent(PlayerRef, "ReloadStateEnter")
+    ; event for when reload ends
+    RegisterForAnimationEvent(PlayerRef, "ReloadStateExit")
+    ; event for when the player theloads game
+    RegisterForRemoteEvent(PlayerRef, "OnPlayerLoadGame")
+    ; event for when the player equips an item
+    RegisterForRemoteEvent(PlayerRef, "OnItemEquipped")
+    ; event for BCR fix
+    if RegisterForAnimationEvent(PlayerRef, "reloadEnd")
+        debug.messagebox("reloadEnd registered")
+    endif
+    ; check if player has TR installed
+    If Game.IsPluginInstalled("TacticalReload.esm")
+        AnimsReloadReserve = Game.GetFormFromFile(0x00001734, "TacticalReload.esm") as Keyword
+    Else
+        AnimsReloadReserve = None
+    EndIf
+EndEvent
+
+Event Actor.OnPlayerLoadGame(Actor akSender)
+        ; check if player has TR installed
+        If Game.IsPluginInstalled("TacticalReload.esm")
+            ; if they do, store the TR keyword inside the script
+            AnimsReloadReserve = Game.GetFormFromFile(0x00001734, "TacticalReload.esm") as Keyword
+        Else
+            ;/ if they do not, set keyword as none in case they have
+            uninstalled TR after the keyword was stored /;
+            AnimsReloadReserve = None
+        EndIf
+EndEvent
+
+Event Actor.OnItemEquipped(Actor akSender, Form akBaseObject, ObjectReference akReference)
+    ; works only if player equips a weapon and BCR mode is on
+    If akBaseObject as Weapon && BitChBCRCompat == True
+        ; set up the weapon instance
+        int slotIndex = PlayerRef.GetEquippedItemType(0) + 32
+        instanceData:Owner thisInstance = PlayerRef.GetInstanceOwner(slotIndex)
+
+        ; max ammo capacity
+        int AmmoCapacity = instanceData.GetAmmoCapacity(thisInstance) as int
+
+        ;/ if the player equipped a weapon that has the tracker keyword, we
+        need to increase ammo by 1 on it/;
+        If (instanceData.GetKeywords(thisInstance)).Find(ChamberedReload) != -1
+            ; increase ammo by 1
+            instanceData.SetAmmoCapacity(thisInstance, AmmoCapacity + 1)
+        EndIf
+    EndIf
+EndEvent
+
+Event OnAnimationEvent(ObjectReference akSource, String sEvent)
+    ; set up the weapon instance
+    int slotIndex = PlayerRef.GetEquippedItemType(0) + 32
+	instanceData:Owner thisInstance = PlayerRef.GetInstanceOwner(slotIndex)
+    
+    ; ammo type currently in the weapon
+    Ammo ChamberedAmmo = instanceData.GetAmmo(thisInstance)
+    ; max ammo capacity
+    int AmmoCapacity = instanceData.GetAmmoCapacity(thisInstance) as int
+    ; amount of ammo currently in the weapon
+    int CurrentAmmo = UI.Get( "HUDMenu", "root.RightMeters_mc.AmmoCount_mc.ClipCount_tf.text" ) as int
+    ;--------------------------------------------------------------------
+
+    
+    If sEvent == "ReloadStateEnter"
+        debug.trace("ReloadStateEnter")
+        ;--------------------------------------------------------------------
+        ; CHAMBERING AN EXTRA ROUND
+        ;--------------------------------------------------------------------
+
+        ; this will only pass if TR is installed
+        If AllowBulletsInTheChamber == True && BitChTRCompat == True && AnimsReloadReserve
+            ; check if weapon isn't patched out
+            If (instanceData.GetKeywords(thisInstance)).Find(DisableChamberedReload) == -1
+                ; check if the weapon has the TR or the ForceBitChReload keyword
+                If (instanceData.GetKeywords(thisInstance)).Find(AnimsReloadReserve) != -1 || (instanceData.GetKeywords(thisInstance)).Find(ForceBitChReload) != -1
+                    ; check ammo and whether it already has an extra round added
+                    If CurrentAmmo != 0 && (instanceData.GetKeywords(thisInstance)).Find(ChamberedReload) == -1
+                        ; if not, add an extra round
+                        instanceData.SetAmmoCapacity(thisInstance, AmmoCapacity + 1)
+                        ; update the weapon with an indicator KW
+                        instanceData.SetKeywords(thisInstance, ChamberTheKeyword(instanceData.GetKeywords(thisInstance), ChamberedReload, "Add"))
+                    ;/ if current ammo is 0 and it had a chambered round, we need to
+                    remove the changes we made /;
+                    ElseIf CurrentAmmo == 0 && (instanceData.GetKeywords(thisInstance)).Find(ChamberedReload) != -1
+                        instanceData.SetAmmoCapacity(thisInstance, AmmoCapacity - 1)
+                        instanceData.SetKeywords(thisInstance, ChamberTheKeyword(instanceData.GetKeywords(thisInstance), ChamberedReload, "Remove"))                
+                    EndIf
+                ;/ in case a weapon loses the TR keyword, we will reset the ammo count
+                and remove the keyword /;
+                ElseIf (instanceData.GetKeywords(thisInstance)).Find(DisableChamberedReload) == -1 && (instanceData.GetKeywords(thisInstance)).Find(AnimsReloadReserve) == -1 && (instanceData.GetKeywords(thisInstance)).Find(ChamberedReload) != -1
+                    instanceData.SetAmmoCapacity(thisInstance, AmmoCapacity - 1)
+                    instanceData.SetKeywords(thisInstance, ChamberTheKeyword(instanceData.GetKeywords(thisInstance), ChamberedReload, "Remove"))
+                EndIf
+            EndIf
+
+        ;/ if the Keyword check fails, TR is not installed and whether
+        the Tactical Reload mode is ON or OFF serves no purpose /;
+        ElseIf AllowBulletsInTheChamber == True
+            ; same as above, but no AnimsReloadReserve check
+            If (instanceData.GetKeywords(thisInstance)).Find(DisableChamberedReload) == -1
+                If CurrentAmmo != 0 && (instanceData.GetKeywords(thisInstance)).Find(ChamberedReload) == -1
+                    instanceData.SetAmmoCapacity(thisInstance, AmmoCapacity + 1)
+                    instanceData.SetKeywords(thisInstance, ChamberTheKeyword(instanceData.GetKeywords(thisInstance), ChamberedReload, "Add"))
+                ElseIf CurrentAmmo == 0 && (instanceData.GetKeywords(thisInstance)).Find(ChamberedReload) != -1
+                    instanceData.SetAmmoCapacity(thisInstance, AmmoCapacity - 1)
+                    instanceData.SetKeywords(thisInstance, ChamberTheKeyword(instanceData.GetKeywords(thisInstance), ChamberedReload, "Remove"))
+                EndIf
+            EndIf
+        EndIf
+
+        ;--------------------------------------------------------------------
+        ; LOSING AMMO ON RELOAD
+        ;--------------------------------------------------------------------
+
+        If AllowAmmoDrop == True && (instanceData.GetKeywords(thisInstance)).Find(CantDropAmmo) == -1
+            debug.trace("Dropping ammo")
+            Utility.Wait(0.420)
+            ; if TR mode is on, we must drop 1 less with TR keyword present
+            If AllowBulletsInTheChamber == True && BitChTRCompat == True && AnimsReloadReserve
+                ; check if the weapon has the proper keywords and if it does - drop 1 less
+                If CurrentAmmo != 0 && (instanceData.GetKeywords(thisInstance)).Find(DisableChamberedReload) == -1 && AllowBulletsInTheChamber == True
+                    If (instanceData.GetKeywords(thisInstance)).Find(AnimsReloadReserve) != -1 || (instanceData.GetKeywords(thisInstance)).Find(ForceBitChReload) != -1
+                        PlayerRef.RemoveItem(ChamberedAmmo, CurrentAmmo - 1, True, None)
+                        ; eclix wanted an option to lose ammo forever
+                        If DeleteAmmoDrop == False
+                            PlayerRef.PlaceAtMe(ChamberedAmmo as Form, CurrentAmmo - 1, False, False, True)
+                        EndIf
+                    Else
+                        ; otherwise drop everything
+                        PlayerRef.RemoveItem(ChamberedAmmo, CurrentAmmo, True, None)
+                        If DeleteAmmoDrop == False
+                            PlayerRef.PlaceAtMe(ChamberedAmmo as Form, CurrentAmmo, False, False, True)
+                        EndIf
+                    EndIf
+                EndIf
+            ;/ if the Keyword check fails, TR is not installed and whether
+            the Tactical Reload mode is ON or OFF serves no purpose /;
+            Else
+                If CurrentAmmo != 0 && (instanceData.GetKeywords(thisInstance)).Find(DisableChamberedReload) == -1 && AllowBulletsInTheChamber == True
+                    PlayerRef.RemoveItem(ChamberedAmmo, CurrentAmmo - 1, True, None)
+                    If DeleteAmmoDrop == False
+                        PlayerRef.PlaceAtMe(ChamberedAmmo as Form, CurrentAmmo - 1, False, False, True)
+                    EndIf
+                Else
+                    PlayerRef.RemoveItem(ChamberedAmmo, CurrentAmmo, True, None)
+                    If DeleteAmmoDrop == False
+                        PlayerRef.PlaceAtMe(ChamberedAmmo as Form, CurrentAmmo, False, False, True)
+                    EndIf
+                EndIf
+            EndIf
+        EndIf
+    EndIf
+
+
+    If sEvent == "ReloadStateExit"
+        debug.trace("ReloadStateExit")
+        ; this will only pass if TR is installed
+        If AllowBulletsInTheChamber == True && BitChTRCompat == True && AnimsReloadReserve
+            ; check if weapon isn't patched out
+            If (instanceData.GetKeywords(thisInstance)).Find(DisableChamberedReload) == -1
+                ; check if the weapon has the TR or the ForceBitChReload keyword
+                If (instanceData.GetKeywords(thisInstance)).Find(AnimsReloadReserve) != -1 || (instanceData.GetKeywords(thisInstance)).Find(ForceBitChReload) != -1
+                    ; check ammo and whether it already has an extra round added
+                    If (instanceData.GetKeywords(thisInstance)).Find(ChamberedReload) == -1
+                        ; if not, add an extra round
+                        instanceData.SetAmmoCapacity(thisInstance, AmmoCapacity + 1)
+                        ; update the weapon with an indicator KW
+                        instanceData.SetKeywords(thisInstance, ChamberTheKeyword(instanceData.GetKeywords(thisInstance), ChamberedReload, "Add"))
+                    EndIf
+                EndIf
+            EndIf
+        ;/ if the Keyword check fails, TR is not installed and whether
+        the Tactical Reload mode is ON or OFF serves no purpose /;
+        ElseIf AllowBulletsInTheChamber == True
+            ; same as above, but no AnimsReloadReserve check
+            If (instanceData.GetKeywords(thisInstance)).Find(DisableChamberedReload) == -1
+                If (instanceData.GetKeywords(thisInstance)).Find(ChamberedReload) == -1
+                    instanceData.SetAmmoCapacity(thisInstance, AmmoCapacity + 1)
+                    instanceData.SetKeywords(thisInstance, ChamberTheKeyword(instanceData.GetKeywords(thisInstance), ChamberedReload, "Add"))
+                EndIf
+            EndIf
+        EndIf
+    EndIf
+
+    ;/ lmao BCR hack stolen from Bingle
+    thing didn't work for me in the past because I had the
+    "reloadEnd" Event check nested inside another Event check /;
+    If sEvent == "reloadEnd" && BitChBCRCompat == True
+        debug.trace("reloadEnd")
+        If (instanceData.GetKeywords(thisInstance)).Find(ChamberedReload) != -1
+          ; add 1 ammo to compensate for BCR removing the increase
+          instanceData.SetAmmoCapacity(thisInstance, AmmoCapacity + 1)
+        EndIf
+    EndIf
+
+EndEvent
+
+;--------------------------------------------------------------------
+; FUNCTIONS
+;--------------------------------------------------------------------
+
+; this will add a keyword to the current instance of a weapon
+Keyword[] Function ChamberTheKeyword(Keyword[] mainArray, keyword keywordToDoButtStuffWith, string sWhatDo)
+	; generate an empty array
+	Keyword[] tempArray = new Keyword[0]
+	; populate the empty array
+	tempArray = mainArray
+	; options on how to modify the array
+	If sWhatDo == "Add"
+		; add the keyword into the array
+		tempArray.Add(keywordToDoButtStuffWith)
+        ; end
+		return tempArray
+	elseIf sWhatdo == "Remove"
+		; find the position of the keyword 
+		int removeFrom = tempArray.Find(keywordToDoButtStuffWith)
+		; remove the keyword
+		tempArray.Remove(removeFrom)
+        ; end
+		return tempArray
+	EndIf
+EndFunction

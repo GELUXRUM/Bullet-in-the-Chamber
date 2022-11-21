@@ -1,0 +1,81 @@
+{
+	"modName": "Bullet in the Chamber",
+	"keybinds": [
+		{
+			"id": "AmmoCheckHotkey",
+			"desc": "See a rough estimate of how much ammo is left in the magazine.",
+			"action": {
+				"type": "CallFunction",
+				"form": "Bullet in the Chamber.esp|701",
+				"function": "EstimateAmmoCheck"
+			}
+		},
+		{
+			"id": "ExactAmmoCheckHotkey",
+			"desc": "See the exact amount of ammo that is left in the magazine.",
+			"action": {
+				"type": "CallFunction",
+				"form": "Bullet in the Chamber.esp|701",
+				"function": "ExactAmmoCheck"
+			}
+		},
+		{
+			"id": "ToggleFireModeHotkey",
+			"desc": "Switch from full-auto to semi-auto.",
+			"action": {
+				"type": "CallFunction",
+				"form": "Bullet in the Chamber.esp|703",
+				"function": "ToggleFireMode"
+			}
+		},
+		{
+            "id": "SemiAutoFire",
+            "desc": "Semi-Auto Fire",
+            "action": {
+                "type": "RunConsoleCommand",
+                "command": "player.pa ActionFireSingle"
+            }
+        },
+		{
+			"id": "SeamlessTRSwitch",
+			"desc": "Adds or removes the Tactical Reload keyword.",
+			"action": {
+				"type": "CallFunction",
+				"form": "Bullet in the Chamber.esp|705",
+				"function": "TacticalReloadToggle"
+			}
+		},
+		{
+            "id": "Lolster",
+            "desc": "Lower/holster weapon",
+            "action": {
+                "type": "SendEvent",
+                "form": "Bullet in the Chamber.esp|704"
+            }
+        },
+		{
+            "id": "ReloadCheck",
+            "desc": "Reload/check ammo",
+            "action": {
+                "type": "SendEvent",
+                "form": "Bullet in the Chamber.esp|701"
+            }
+        },
+		{
+            "id": "GrenadeHotkey",
+            "desc": "Throw a nade",
+            "action": {
+                "type": "RunConsoleCommand",
+                "command": "player.pa ActionThrow"
+            }
+        },
+        {
+            "id": "MeleeHotkey",
+            "desc": "Do a melee",
+            "action": {
+                "type": "RunConsoleCommand",
+                "command": "player.pa ActionMelee"
+            }
+        }
+	]
+}

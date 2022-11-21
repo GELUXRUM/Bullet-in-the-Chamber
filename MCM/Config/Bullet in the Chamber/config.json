@@ -1,0 +1,400 @@
+{
+	"modName": "Bullet in the Chamber",
+	"displayName": "Bullet in the Chamber",
+	"minMcmVersion": 2,
+	"pluginRequirements": ["Bullet in the Chamber.esp"],
+	"content": [{
+			"type": "spacer",
+			"numLines": 7
+		},
+		{
+			"text": "<p align='center'><font size='16'>Welcome to</font></p>",
+			"html": true,
+			"type": "text"
+		},
+		{
+			"text": "<p align='center'><font size='40' color='#42069A'>Bullet in the Chamber</font></p>",
+			"html": true,
+			"type": "text"
+		},
+		{
+			"text": "<p align='center'><font size='16'>Expanded Weapon Mechanics, by GELUXRUM and eclix</font></p>",
+			"html": true,
+			"type": "text"
+		}
+	],
+	"pages": [{
+			"pageDisplayName": "Ammo Check",
+			"content": [{
+					"text": "Approximate Ammo Check",
+					"type": "section"
+				},
+				{
+					"id": "AmmoCheckHotkey",
+					"text": "Approximate Ammo Check Hotkey",
+					"type": "hotkey",
+					"help": "See roughly how much ammo is left in the magazine e.g. nearly full.",
+					"valueOptions": {
+						"allowModifierKeys": true
+					}
+				},
+				{
+					"text": "Enable Simple Animations",
+					"type": "switcher",
+					"help": "Lowers your weapon and prevents firing while the ammo check is taking place.",
+					"valueOptions": {
+						"sourceType": "PropertyValueBool",
+						"sourceForm": "Bullet in the Chamber.esp|701",
+						"propertyName": "LowerNormal"
+					}
+				},
+				{
+					"text": "Enable Sounds",
+					"type": "switcher",
+					"help": "Plays foley sounds as you check the magazine. Requires Animations ON.",
+					"valueOptions": {
+						"sourceType": "PropertyValueBool",
+						"sourceForm": "Bullet in the Chamber.esp|701",
+						"propertyName": "SoundsNormal"
+					}
+				},
+				{
+					"type": "spacer",
+					"numLines": 1
+				},
+				{
+					"text": "Exact Ammo Check",
+					"type": "section"
+				},
+				
+				{
+					"id": "ExactAmmoCheckHotkey",
+					"text": "Exact Ammo Check Hotkey",
+					"type": "hotkey",
+					"help": "See the exact amount of ammo left in the magazine e.g. 15/30.",
+					"valueOptions": {
+						"allowModifierKeys": true
+					}
+				},		
+				{
+					"text": "Enable Simple Animations",
+					"type": "switcher",
+					"help": "Lowers your weapon and prevents firing while the ammo check is taking place.",
+					"valueOptions": {
+						"sourceType": "PropertyValueBool",
+						"sourceForm": "Bullet in the Chamber.esp|701",
+						"propertyName": "LowerExact"
+					}
+				},
+				{
+					"text": "Enable Sounds",
+					"type": "switcher",
+					"help": "Plays foley sounds as you check the magazine. Requires Animations ON.",
+					"valueOptions": {
+						"sourceType": "PropertyValueBool",
+						"sourceForm": "Bullet in the Chamber.esp|701",
+						"propertyName": "SoundsExact"
+					}
+				},
+				{
+					"type": "spacer",
+					"numLines": 1
+				},
+				{
+					"text": "Exact Ammo Check Config",
+					"type": "section"
+				},
+				{
+					"text": "Enable FallUI HUD Mode",
+					"type": "switcher",
+					"help": "Enable if you use FallUI - HUD and want a cleaner notification. May be hard to read on compact HUD presets.",
+					"valueOptions": {
+						"sourceType": "PropertyValueBool",
+						"sourceForm": "Bullet in the Chamber.esp|701",
+						"propertyName": "ModeFallUI"
+					}
+				},
+				{
+					"text": "Include Magazine Capacity",
+					"type": "switcher",
+					"help": "Tells you how much ammo in total can be held in the magazine.",
+					"valueOptions": {
+						"sourceType": "PropertyValueBool",
+						"sourceForm": "Bullet in the Chamber.esp|701",
+						"propertyName": "AmmoCapacityEnabled"
+					}
+				},
+				{
+					"text": "Include Ammo Reserves",
+					"type": "switcher",
+					"help": "Tells you how much ammo is left in your inventory.",
+					"valueOptions": {
+						"sourceType": "PropertyValueBool",
+						"sourceForm": "Bullet in the Chamber.esp|701",
+						"propertyName": "ReserveNotifEnabled"
+					}
+				},
+				{
+					"text": "Include Ammo Name",
+					"type": "switcher",
+					"help": "Tells you what ammo is currently being used by the weapon.",
+					"valueOptions": {
+						"sourceType": "PropertyValueBool",
+						"sourceForm": "Bullet in the Chamber.esp|701",
+						"propertyName": "AmmoNameEnabled"
+					}
+				},
+				{
+					"text": "<font size='14' color='#AAAAAA'>• To force a weapon to always use an exact ammo check, add the keyword <b>BitCh_ExactCheckCapability</b>.</font>",
+					"html": true,
+					"type": "text"
+				}
+			]
+		},
+		{
+			"pageDisplayName": "Fire Mode Switch",
+			"content": [{
+					"text": "Toggle Fire Mode",
+					"type": "section"
+				},
+				{
+					"id": "ToggleFireModeHotkey",
+					"text": "Toggle Fire Mode Hotkey",
+					"type": "hotkey",
+					"help": "Switch automatic weapons to semi-auto.",
+					"valueOptions": {
+						"allowModifierKeys": true
+					}
+				},
+				{
+					"text": "<font size='14' color='#AAAAAA'>• Works with all automatic weapons, even if they do not have native semi-auto sounds configured.<br>• Can be sensitive to script lag under heavy load, causing more than one shot to fire.<br>• 60% of the time, it works every time.<br>• Can be used alongside Equiment and Crafting Overhaul's fire mode feature, which isn't sensitive to lag but does require weapons to have semi-auto sounds configured.<br>• How it works: the script listens for a \"start firing\" event, then immediately sends a \"stop firing\" event, as if you had just quickly tapped the trigger.</font>",
+					"html": true,
+					"type": "text"
+				}
+			]
+		},
+		{
+			"pageDisplayName": "Reload Expanded",
+			"content": [{
+					"text": "Bullet In The Chamber",
+					"type": "section"
+				},
+				{
+					"text": "Enable BitCh Reload",
+					"type": "switcher",
+					"help": "Enable reloads that add an extra bullet when reloaded with a non-empty mag.",
+					"valueOptions": {
+						"sourceType": "PropertyValueBool",
+						"sourceForm": "Bullet in the Chamber.esp|702",
+						"propertyName": "BitChAllow"
+					}
+				},
+				{
+					"text": "<font size='14' color='#AAAAAA'>• Simulates a round in the chamber by dynamically adding +1 to the magazine capacity.<br>• To exclude weapons from this mechanic, add the keyword <b>BitCh_DisableChamberedReload</b></font>",
+					"html": true,
+					"type": "text"
+				},
+				{
+					"type": "spacer",
+					"numLines": 1
+				},
+				{
+					"text": "BitCh Tactical Reload Mode",
+					"type": "section"
+				},
+				{
+					"text": "Enable Tactical Reload Mode",
+					"type": "switcher",
+					"help": "Enable BitCh Reload must also be ON.",
+					"valueOptions": {
+						"sourceType": "PropertyValueBool",
+						"sourceForm": "Bullet in the Chamber.esp|702",
+						"propertyName": "modeTR"
+					}
+				},
+				{
+					"text": "<font size='14' color='#AAAAAA'>• Requires the mod Tactical Reload.<br>• Only TR enabled weapons will receive +1 when reloading, all other weapons are excluded.<br>• To enable BitCh on non-TR weapons, add the keyword <b>BitCh_ForceBitChReload</b>.</font>",
+					"html": true,
+					"type": "text"
+				},
+				{
+					"type": "spacer",
+					"numLines": 1
+				},
+				{
+					"text": "BitCh Bullet Counted Reload Mode",
+					"type": "section"
+				},
+				{
+					"text": "Enable Bullet Counted Reload Mode",
+					"type": "switcher",
+					"help": "Enable only if you use BCR.",
+					"valueOptions": {
+						"sourceType": "PropertyValueBool",
+						"sourceForm": "Bullet in the Chamber.esp|702",
+						"propertyName": "modeBCR"
+					}
+				},
+				{
+					"text": "<font size='14' color='#AAAAAA'>• Requires the mod Bullet Counted Reload installed and enabled.<br>• Fixes the BCR incompatibility.<br>• Make sure to add the keyword <b>BitCh_DisableChamberedReload</b> to all BCR weapons. Failure to do so will result in a small visual bug under certain conditions.</font>",
+					"html": true,
+					"type": "text"
+				},
+				{
+					"type": "spacer",
+					"numLines": 1
+				},
+				{
+					"text": "Drop Ammo On Reload",
+					"type": "section"
+				},
+				{
+					"text": "Drop Ammo On Reload",
+					"type": "switcher",
+					"help": "Any ammo remaining in the magazine will be removed from the player's inventory and dropped on the ground.",
+					"valueOptions": {
+						"sourceType": "PropertyValueBool",
+						"sourceForm": "Bullet in the Chamber.esp|706",
+						"propertyName": "ammoDropAllow"
+					}
+				},
+				{
+					"text": "Delete Ammo On Reload",
+					"type": "switcher",
+					"help": "Enable Ammo Drop must also be ON. Deletes the ammo completely instead of dropping it on the ground. ",
+					"valueOptions": {
+						"sourceType": "PropertyValueBool",
+						"sourceForm": "Bullet in the Chamber.esp|706",
+						"propertyName": "ammoDropDelete"
+					}
+				},
+				{
+					"text": "<font size='14' color='#AAAAAA'>• To disable this on certain weapons, add the keyword <b>BitCh_CantDropAmmo</b>.</font>",
+					"html": true,
+					"type": "text"
+				}
+			]
+		},
+		{
+			"pageDisplayName": "Hotkeys and Misc",
+			"content": [{
+					"text": "Lower/Holster Weapon Hotkey",
+					"type": "section"
+				},
+				{
+					"id": "Lolster",
+					"text": "Lower Weapon / Holster Weapon Hotkey",
+					"type": "hotkey",
+					"help": "Dual use hotkey: short press to lower your weapon / long press to holster.",
+					"valueOptions": {
+						"allowModifierKeys": true
+					}
+				},
+				{
+					"text": "Fix Speed Walking",
+					"type": "switcher",
+					"help": "Reduces animation speed while walking with a weapon lowered to avoid \"speed walking\".",
+					"valueOptions": {
+						"sourceType": "PropertyValueBool",
+						"sourceForm": "Bullet in the Chamber.esp|704",
+						"propertyName": "MCMFixSpeedWalk"
+					},
+					"action": {
+						"type": "CallFunction",
+						"form": "Bullet in the Chamber.esp|704",
+						"function": "ToggleFixSpeedWalk",
+						"params": [
+							"{value}"
+						]
+					}
+				},
+				{
+					"type": "spacer",
+					"numLines": 1
+				},
+				{
+					"text": "Reload / Check Ammo Hotkey",
+					"type": "section"
+				},
+				{
+					"id": "ReloadCheck",
+					"text": "Reload / Check Ammo Hotkey",
+					"type": "hotkey",
+					"help": "Dual use hotkey: short press to reload / long press to check ammo.",
+					"valueOptions": {
+						"allowModifierKeys": true
+					}
+				},
+				{
+					"text": "Use Approximate Ammo Check",
+					"type": "switcher",
+					"help": "If ON, the ammo check will be approximate. If OFF, it will be exact.",
+					"valueOptions": {
+						"sourceType": "PropertyValueBool",
+						"sourceForm": "Bullet in the Chamber.esp|701",
+						"propertyName": "MultiKeyUseEstimate"
+					}
+				},
+				{
+					"type": "spacer",
+					"numLines": 1
+				},
+				{
+					"text": "Other Useful Hotkeys",
+					"type": "section"
+				},
+				{
+					"id": "GrenadeHotkey",
+					"text": "Throw Grenade Hotkey",
+					"type": "hotkey",
+					"help": "Just throws a grenade."
+				},
+				{
+					"id": "MeleeHotkey",
+					"text": "Melee Hotkey",
+					"type": "hotkey",
+					"help": "Just does a melee."
+				},
+				{
+					"type": "spacer",
+					"numLines": 1
+				},
+				{
+					"text": "Misc",
+					"type": "section"
+				},
+				{
+					"text": "Long Press Timer",
+					"type": "slider",
+					"help": "Default: 0.3. How long you must hold a key for it to trigger a long press.",
+					"valueOptions": {
+						"min": 0,
+						"max": 1,
+						"step": 0.1,
+						"sourceType": "GlobalValue",
+						"sourceForm": "Bullet in the Chamber.esp|603"
+					}
+				},
+				{
+					"text": "Grenade Throwing Requires Weapon to be Holstered",
+					"type": "switcher",
+					"help": "If ON, you must holster your weapon before throwing a grenade.",
+					"valueOptions": {
+						"sourceType": "GlobalValue",
+						"sourceForm": "Bullet in the Chamber.esp|605"
+					}
+				}
+			]
+		},
+		{
+			"pageDisplayName": "Patching Info",
+			"content": [
+				{
+					"text": "<font size='14'>Keywords that can be added to Weapons or OMODs:<br><br><b>BitCh_DisableChamberedReload</b> - place this on weapons that should not be able to hold an extra round in the chamber e.g. revolvers.<br><br><b>BitCh_CantDropAmmo</b> - place this on weapons that should not be able to drop ammo on reload e.g. Gatling Laser.<br><br><b>BitCh_ForceBitChReload</b> - if you use TR mode, add this to weapons that lack TR patches to allow them to have BitCh reloads.<br><br><b>BitCh_ExactCheckCapability</b> - will return exact amount when using estimate ammo check. Some weapons IRL have mags which show you exactly how many bullets are left inside e.g. P90.</font>",
+					"html": true,
+					"type": "text"
+				}
+			]
+		}
+	]
+}
