@@ -1,4 +1,4 @@
-ScriptName BitCH_FireModeExpanded extends Quest
+ScriptName BitCh_FireModeExpanded extends Quest
 {script by eclix used to allow auto weapons to fire in semi-auto}
 
 Group Actions

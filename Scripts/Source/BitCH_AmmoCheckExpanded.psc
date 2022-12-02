@@ -1,4 +1,4 @@
-Scriptname BitCH_AmmoCheckExpanded Extends Quest
+Scriptname BitCh_AmmoCheckExpanded Extends Quest
 
 ;--------------------------------------------------------------------
 ; PROPERTY GROUPS
