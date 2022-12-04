@@ -62,7 +62,6 @@ endEvent
 event actor.onPlayerLoadGame(actor akSender)
     ; register for events
     registerEvents()
-    debugRegistration()
     ; check if Tactical Reload has been (un)installed
     if game.isPluginInstalled("TacticalReload.esm")
         AnimsReloadReserve = game.getFormFromFile(0x00001734, "TacticalReload.esm") as keyword

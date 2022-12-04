@@ -71,6 +71,7 @@ endEvent
 event onControlDown(string sControl)
     ; custom event sent by hotkey from MCM
     if sControl == "ammoDropEvent"
+        debug.trace("down")
         ; while held, allow ammo drop
         ammoDropKeyHeld = true
     endIf
@@ -79,6 +80,7 @@ endEvent
 event onControlUp(string sControl, float time)
     ; custom event sent by hotkey from MCM
     if sControl == "ammoDropEvent"
+        debug.trace("up")
         ; when released, block ammo drop
         ammoDropKeyHeld = false
     endIf

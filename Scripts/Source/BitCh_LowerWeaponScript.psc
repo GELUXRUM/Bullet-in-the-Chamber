@@ -47,43 +47,6 @@ event actor.onPlayerLoadGame(actor akSender)
 	endIf
 endEvent
 
-;/ event onControlDown(string sControl)
-		if (sControl == "Lolster")
-			hotKeyIsDown = true
-			; we check if the player wants long presses to holster
-			if enableHolster == true
-				; wait to see if this is going to be a long press
-				utility.wait(longPressTimer.getValue()) 
-				; hotkey is still down, do long press stuff
-				if hotKeyIsDown && !inCooldown
-					; sheathe weapon. Both first and third person
-					playerRef.playIdleAction(actionSheath)
-					; hotkey is not down, do short press stuff
-				else 
-					; lowers weapon in first person
-					playerRef.playIdleAction(actionGunDown)
-					; lowers weapon in third person
-					playerRef.playIdle(gunRelaxedRootPlayer)
-				endIf
-			else
-				; if they don't want long presses to holster we just lower the weapon
-				playerRef.playIdleAction(actionGunDown)
-				playerRef.playIdle(gunRelaxedRootPlayer)
-			endIf
-		endIf
-endEvent
-
-event onControlUp(string sControl, float time)
-	; key has been released, reset the bool
-	if (sControl == "Lolster")
-		hotKeyIsDown = false
-		inCooldown = true
-		utility.Wait(longPressTimer.getValue())
-		inCooldown = false
-	endIf
-endEvent /;
-
-
 event onControlDown(string sControl)
     if sControl == "Lolster"
         startTimer(longPressTimer.getValue(), lolsterTimerID)

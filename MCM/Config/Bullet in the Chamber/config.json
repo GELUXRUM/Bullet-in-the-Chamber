@@ -257,7 +257,7 @@
 					}
 				},
 				{
-					"text": "<font size='14' color='#AAAAAA'>• Set it to your reload button to make it always active.<br>• Set this as \"Shift+R\" to trigger ammo drop when reloading while Shift is held.</font>",
+					"text": "<font size='14' color='#AAAAAA'>• Set it to your reload button to make it always active.<br>• Using modifier keys such as \"Shift+R\" does not work properly.</font>",
 					"html": true,
 					"type": "text"
 				},
