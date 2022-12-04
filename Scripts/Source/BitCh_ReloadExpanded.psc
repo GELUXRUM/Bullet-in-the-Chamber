@@ -42,7 +42,7 @@ int jumpTimerID = 69
 ; how long to block the jump for until the failsafe kicks in
 float jumpBlockTimer = 5.0
 ; used to store some messages for debugging
-string onInitDebug
+string onInitDebug = "Event registration:\n"
 
 ;--------------------------------------------------------------------
 ; EVENTS
@@ -50,42 +50,24 @@ string onInitDebug
 
 event onInit()
     ; register for events
-    registerForAnimationEvent(playerRef, "reloadStateEnter")
-    registerForAnimationEvent(playerRef, "reloadEnd")
-    registerForAnimationEvent(playerRef, "reloadStateExit")
-    registerForRemoteEvent(playerRef, "OnPlayerLoadGame")
-    ; debug only - output which ones registered
-    debugRegistration()
-
-    registerForRemoteEvent(playerRef, "OnItemEquipped")
-
+    registerEvents()
     ; check if Tactical Reload is installed
     if game.isPluginInstalled("TacticalReload.esm")
-        AnimsReloadReserve = Game.GetFormFromFile(0x00001734, "TacticalReload.esm") as Keyword
+        AnimsReloadReserve = game.getFormFromFile(0x00001734, "TacticalReload.esm") as keyword
     else
         AnimsReloadReserve = none
     endIf
 endEvent
 
 event actor.onPlayerLoadGame(actor akSender)
-    onInitDebug = ""
     ; register for events
-    registerForAnimationEvent(playerRef, "reloadStateEnter")
-    registerForAnimationEvent(playerRef, "reloadEnd")
-    registerForAnimationEvent(playerRef, "reloadStateExit")
-    registerForRemoteEvent(playerRef, "OnPlayerLoadGame")
-    ; debug only - output which ones registered
+    registerEvents()
     debugRegistration()
-
-    registerForRemoteEvent(playerRef, "OnItemEquipped")
-
     ; check if Tactical Reload has been (un)installed
     if game.isPluginInstalled("TacticalReload.esm")
-        AnimsReloadReserve = Game.GetFormFromFile(0x00001734, "TacticalReload.esm") as Keyword
-        debug.messageBox("TR KW yes")
+        AnimsReloadReserve = game.getFormFromFile(0x00001734, "TacticalReload.esm") as keyword
     else
         AnimsReloadReserve = none
-        debug.messageBox("TR KW no")
     endIf
 endEvent
 
@@ -108,7 +90,6 @@ event actor.onItemEquipped(actor akSender, form akBaseObject, objectReference ak
     endIf
 endEvent
 
-
 event onAnimationEvent(objectReference akSender, string sEvent)
     ; set up the weapon instance
     int slotIndex = playerRef.getEquippedItemType(0) + 32
@@ -122,47 +103,46 @@ event onAnimationEvent(objectReference akSender, string sEvent)
     ; CHAMBERING AN EXTRA ROUND
     ;--------------------------------------------------------------------
     
-    ; player starts reloading an enabled weapon
-    if sEvent == "reloadStateEnter" && (instanceData.getKeywords(thisInstance)).find(disableChamberedReload) == -1
+    ; player starts reloading
+    if sEvent == "reloadStateEnter"
         ; call a function that blocks jump
         inputLayer = inputEnableLayer.create()
         inputLayer.enableJumping(false)
+        ; start failsafe timer
         startTimer(jumpBlockTimer, jumpTimerID)
-        ; check if enabled and weapon isn't excluded
-        if BitChAllow == true
-            ; check if TR mode is available
-            if modeTR == true && AnimsReloadReserve
-                ; check if weapon is TR-enabled either via real or fake TR keyword
-                if (instanceData.getKeywords(thisInstance)).find(AnimsReloadReserve) != -1 || (instanceData.getKeywords(thisInstance)).find(forceBitChReload) != -1
+        ; check if weapon isn't excluded
+        if (instanceData.getKeywords(thisInstance)).find(disableChamberedReload) == -1
+            if BitChAllow == true
+                ; check if TR mode is available
+                if modeTR == true && AnimsReloadReserve
+                    ; check if weapon is TR-enabled either via real or fake TR keyword
+                    if (instanceData.getKeywords(thisInstance)).find(AnimsReloadReserve) != -1 || (instanceData.getKeywords(thisInstance)).find(forceBitChReload) != -1
+                        ; check ammo and look for keywords
+                        if currentAmmo != 0  && (instanceData.getKeywords(thisInstance)).find(chamberedReload) == -1
+                            ; add 1 ammo and mark the weapon
+                            instanceData.setAmmoCapacity(thisInstance, ammoCapacity + 1)
+                            instanceData.setKeywords(thisInstance, chamberTheKeyword(instanceData.getKeywords(thisInstance), chamberedReload, "add"))
+                        elseif currentAmmo == 0  && (instanceData.getKeywords(thisInstance)).find(chamberedReload) != -1
+                            ; remove 1 ammo and mark the weapon
+                            instanceData.setAmmoCapacity(thisInstance, ammoCapacity - 1)
+                            instanceData.setKeywords(thisInstance, chamberTheKeyword(instanceData.getKeywords(thisInstance), chamberedReload, "remove"))
+                            ; weapon should now be at default capacity
+                        endIf
+                    endIf
+                ; TR mode isn't both on & installed
+                else
                     ; check ammo and look for keywords
                     if currentAmmo != 0  && (instanceData.getKeywords(thisInstance)).find(chamberedReload) == -1
                         ; add 1 ammo and mark the weapon
                         instanceData.setAmmoCapacity(thisInstance, ammoCapacity + 1)
                         instanceData.setKeywords(thisInstance, chamberTheKeyword(instanceData.getKeywords(thisInstance), chamberedReload, "add"))
+                        ; weapons should now be at +1 capacity
                     elseif currentAmmo == 0  && (instanceData.getKeywords(thisInstance)).find(chamberedReload) != -1
                         ; remove 1 ammo and mark the weapon
                         instanceData.setAmmoCapacity(thisInstance, ammoCapacity - 1)
                         instanceData.setKeywords(thisInstance, chamberTheKeyword(instanceData.getKeywords(thisInstance), chamberedReload, "remove"))
                         ; weapon should now be at default capacity
                     endIf
-                endIf
-            ; TR mode isn't both on & installed
-            else
-                inputLayer = inputEnableLayer.create()
-                ; call a function that blocks jump
-                inputLayer.enableJumping(false)
-                startTimer(jumpBlockTimer, jumpTimerID)
-                ; check ammo and look for keywords
-                if currentAmmo != 0  && (instanceData.getKeywords(thisInstance)).find(chamberedReload) == -1
-                    ; add 1 ammo and mark the weapon
-                    instanceData.setAmmoCapacity(thisInstance, ammoCapacity + 1)
-                    instanceData.setKeywords(thisInstance, chamberTheKeyword(instanceData.getKeywords(thisInstance), chamberedReload, "add"))
-                    ; weapons should now be at +1 capacity
-                elseif currentAmmo == 0  && (instanceData.getKeywords(thisInstance)).find(chamberedReload) != -1
-                    ; remove 1 ammo and mark the weapon
-                    instanceData.setAmmoCapacity(thisInstance, ammoCapacity - 1)
-                    instanceData.setKeywords(thisInstance, chamberTheKeyword(instanceData.getKeywords(thisInstance), chamberedReload, "remove"))
-                    ; weapon should now be at default capacity
                 endIf
             endIf
         endIf
@@ -172,22 +152,31 @@ event onAnimationEvent(objectReference akSender, string sEvent)
     ; RELOAD AT MAX
     ;--------------------------------------------------------------------
 
-    ; player finishes reloading an empty gun
-    if sEvent == "reloadStateExit" && (instanceData.getKeywords(thisInstance)).find(chamberedReload) == -1
-        ; check if enabled and weapon isn't excluded
-        if BitChAllow == true && (instanceData.getKeywords(thisInstance)).find(disableChamberedReload) == -1
-            if modeTR == true && AnimsReloadReserve
-                ; check if weapon is TR-enabled either via real or fake TR keyword
-                if (instanceData.getKeywords(thisInstance)).find(AnimsReloadReserve) != -1 || (instanceData.getKeywords(thisInstance)).find(forceBitChReload) != -1
+    ; player finishes reloading
+    if sEvent == "reloadStateExit"
+        ; enable jumping
+        inputLayer.enableJumping(true)
+        ; delete the layer
+        inputLayer.delete()
+        ; cancel failsafe timer
+        cancelTimer(jumpTimerID)
+        ; check if weapon has a chambered round
+        if (instanceData.getKeywords(thisInstance)).find(chamberedReload) == -1
+            ; check if enabled and weapon isn't excluded
+            if BitChAllow == true && (instanceData.getKeywords(thisInstance)).find(disableChamberedReload) == -1
+                if modeTR == true && AnimsReloadReserve
+                    ; check if weapon is TR-enabled either via real or fake TR keyword
+                    if (instanceData.getKeywords(thisInstance)).find(AnimsReloadReserve) != -1 || (instanceData.getKeywords(thisInstance)).find(forceBitChReload) != -1
+                        ; add 1 ammo and mark the weapon
+                        instanceData.setAmmoCapacity(thisInstance, ammoCapacity + 1)
+                        instanceData.setKeywords(thisInstance, chamberTheKeyword(instanceData.getKeywords(thisInstance), chamberedReload, "add"))
+                    endIf
+                ; TR mode isn't both on & installed
+                else
                     ; add 1 ammo and mark the weapon
                     instanceData.setAmmoCapacity(thisInstance, ammoCapacity + 1)
                     instanceData.setKeywords(thisInstance, chamberTheKeyword(instanceData.getKeywords(thisInstance), chamberedReload, "add"))
                 endIf
-            ; TR mode isn't both on & installed
-            else
-                ; add 1 ammo and mark the weapon
-                instanceData.setAmmoCapacity(thisInstance, ammoCapacity + 1)
-                instanceData.setKeywords(thisInstance, chamberTheKeyword(instanceData.getKeywords(thisInstance), chamberedReload, "add"))
             endIf
         endIf
     endIf
@@ -199,19 +188,26 @@ event onAnimationEvent(objectReference akSender, string sEvent)
     ; lmao BCR hack stolen from Bingle
     if sEvent == "reloadEnd" && modeBCR == true && (instanceData.GetKeywords(thisInstance)).Find(chamberedReload) != -1
         instanceData.SetAmmoCapacity(thisInstance, AmmoCapacity + 1)
-        if inputLayer.isJumpingEnabled() == false
-            inputLayer.enableJumping(true)
-            cancelTimer(jumpTimerID)
-            inputLayer.delete()
-        endIf
-    elseif sEvent == "reloadEnd" && modeBCR == false
-        if inputLayer.isJumpingEnabled() == false
-            inputLayer.enableJumping(true)
-            cancelTimer(jumpTimerID)
-            inputLayer.delete()
-        endIf
     endIf
 
+endEvent
+
+event onTimer(int aiTimerID)
+    ; failsafe timer has ended
+    if aiTimerID == jumpTimerID
+        ; enable jumping
+        inputLayer.enableJumping(true)
+        ; delete the layer
+        inputLayer.delete()
+    endIf
+endEvent
+
+; entering Power Armor will break registered events
+event actor.onSit(actor akSender, objectReference akFurniture)
+    if akSender == playerRef
+        ; register events again
+		registerEvents()
+	endIf
 endEvent
 
 ;--------------------------------------------------------------------
@@ -240,38 +236,55 @@ keyword[] function chamberTheKeyword(keyword[] mainArray, keyword keywordToDoBut
     endIf
 endFunction
 
-event onTimer(int aiTimerID)
-    if aiTimerID == jumpTimerID
-        inputLayer.enableJumping(true)
-        debug.trace("timer ended and jumping has been enabled")
-    endIf
-endEvent
-
 function debugRegistration()
     if registerForAnimationEvent(playerRef, "reloadStateEnter")
-        onInitDebug = "reloadStateEnter: success \n"
+        onInitDebug = "reloadStateEnter: success\n"
     else
-        onInitDebug = onInitDebug + "reloadStateEnter: fail \n"
-    endIf
-    if registerForAnimationEvent(playerRef, "reloadEnd")
-        onInitDebug = onInitDebug + "reloadEnd: success \n"
-    else
-        onInitDebug = onInitDebug + "reloadEnd: fail \n"
+        onInitDebug += "reloadStateEnter: fail\n"
     endIf
     if registerForAnimationEvent(playerRef, "reloadStateExit")
-        onInitDebug = onInitDebug + "reloadStateExit: success \n"
+        onInitDebug += "reloadStateExit: success\n"
     else
-        onInitDebug = onInitDebug + "reloadStateExit: fail \n"
+        onInitDebug += "reloadStateExit: fail\n"
     endIf
-    if registerForRemoteEvent(playerRef, "OnPlayerLoadGame")
-        onInitDebug = onInitDebug + "OnPlayerLoadGame: success \n"
+    if registerForAnimationEvent(playerRef, "reloadEnd")
+        onInitDebug += "reloadEnd: success\n"
     else
-        onInitDebug = onInitDebug + "OnPlayerLoadGame: fail \n"
+        onInitDebug += "reloadEnd: fail\n"
     endIf
-    if registerForRemoteEvent(playerRef, "OnItemEquipped")
-        onInitDebug = onInitDebug + "OnItemEquipped: success \n"
+    if registerForRemoteEvent(playerRef, "onSit")
+        onInitDebug += "onSit: success\n"
     else
-        onInitDebug = onInitDebug + "OnItemEquipped: fail \n"
+        onInitDebug += "onSit: fail\n"
     endIf
+    if registerForRemoteEvent(playerRef, "onPlayerLoadGame")
+        onInitDebug += "onPlayerLoadGame: success\n"
+    else
+        onInitDebug += "onPlayerLoadGame: fail\n"
+    endIf
+    if registerForRemoteEvent(playerRef, "onItemEquipped")
+        onInitDebug += "onItemEquipped: success\n"
+    else
+        onInitDebug += "onItemEquipped: fail\n"
+    endIf
+    debug.messagebox("h")
     debug.messageBox(onInitDebug)
+endFunction
+
+function registerEvents()
+    registerForAnimationEvent(playerRef, "reloadStateEnter")
+    registerForAnimationEvent(playerRef, "reloadStateExit")
+    registerForAnimationEvent(playerRef, "reloadEnd")
+    registerForRemoteEvent(playerRef, "onSit")
+    registerForRemoteEvent(playerRef, "onPlayerLoadGame")
+    registerForRemoteEvent(playerRef, "onItemEquipped")
+endFunction
+
+function unregisterEvents()
+    unregisterForAnimationEvent(playerRef, "reloadStateEnter")
+    unregisterForAnimationEvent(playerRef, "reloadStateExit")
+    unregisterForAnimationEvent(playerRef, "reloadEnd")
+    unregisterForRemoteEvent(playerRef, "onSit")
+    unregisterForRemoteEvent(playerRef, "onPlayerLoadGame")
+    unregisterForRemoteEvent(playerRef, "onItemEquipped")
 endFunction

@@ -76,6 +76,14 @@
                 "type": "RunConsoleCommand",
                 "command": "player.pa ActionMelee"
             }
+        },
+		{
+            "id": "ammoDropEvent",
+            "desc": "Drops ammo when held whilst reloading",
+            "action": {
+                "type": "SendEvent",
+                "form": "Bullet in the Chamber.esp|706"
+            }
         }
 	]
 }

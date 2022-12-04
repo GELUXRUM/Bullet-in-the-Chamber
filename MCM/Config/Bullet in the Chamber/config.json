@@ -66,7 +66,6 @@
 					"text": "Exact Ammo Check",
 					"type": "section"
 				},
-				
 				{
 					"id": "ExactAmmoCheckHotkey",
 					"text": "Exact Ammo Check Hotkey",
@@ -75,7 +74,7 @@
 					"valueOptions": {
 						"allowModifierKeys": true
 					}
-				},		
+				},
 				{
 					"text": "Enable Simple Animations",
 					"type": "switcher",
@@ -249,6 +248,20 @@
 					"type": "section"
 				},
 				{
+					"id": "ammoDropEvent",
+					"text": "Ammo Drop Hotkey",
+					"type": "hotkey",
+					"help": "If held whilst reloading, ammo will be dropped from the mag. The \"Drop Ammo On Reload\" toggle must be ON.",
+					"valueOptions": {
+						"allowModifierKeys": true
+					}
+				},
+				{
+					"text": "<font size='14' color='#AAAAAA'>• Set it to your reload button to make it always active.<br>• Set this as \"Shift+R\" to trigger ammo drop when reloading while Shift is held.</font>",
+					"html": true,
+					"type": "text"
+				},
+				{
 					"text": "Drop Ammo On Reload",
 					"type": "switcher",
 					"help": "Any ammo remaining in the magazine will be removed from the player's inventory and dropped on the ground.",
@@ -278,6 +291,30 @@
 		{
 			"pageDisplayName": "Hotkeys and Misc",
 			"content": [{
+					"text": "Buttons to fix broken features",
+					"type": "section"
+				},
+				{
+					"text": "Press Me If Stuff Decides To Break",
+					"type": "button",
+					"help": "Use this button if stuff doesn't work when reloading.",
+					"action": {
+						"type": "CallFunction",
+						"form": "Bullet in the Chamber.esp|707",
+						"function": "registerEvents"
+					}
+				},
+				{
+					"text": "Press Me If You Want To Uninstall The Mod",
+					"type": "button",
+					"help": "Use this button to clean up some stuff done by the scripts so that you can uninstall the mod safely without any left-overs from the scripts.",
+					"action": {
+						"type": "CallFunction",
+						"form": "Bullet in the Chamber.esp|707",
+						"function": "unregisterEvents"
+					}
+				},
+				{
 					"text": "Lower/Holster Weapon Hotkey",
 					"type": "section"
 				},
@@ -366,7 +403,7 @@
 				{
 					"text": "Long Press Timer",
 					"type": "slider",
-					"help": "Default: 0.3. How long you must hold a key for it to trigger a long press.",
+					"help": "Default: 0.3. How long you must hold a key for it to trigger a long press for the dual-use hotkeys.",
 					"valueOptions": {
 						"min": 0,
 						"max": 1,
@@ -388,13 +425,11 @@
 		},
 		{
 			"pageDisplayName": "Patching Info",
-			"content": [
-				{
-					"text": "<font size='14'>Keywords that can be added to Weapons or OMODs:<br><br><b>BitCh_DisableChamberedReload</b> - place this on weapons that should not be able to hold an extra round in the chamber e.g. revolvers.<br><br><b>BitCh_CantDropAmmo</b> - place this on weapons that should not be able to drop ammo on reload e.g. Gatling Laser.<br><br><b>BitCh_ForceBitChReload</b> - if you use TR mode, add this to weapons that lack TR patches to allow them to have BitCh reloads.<br><br><b>BitCh_ExactCheckCapability</b> - will return exact amount when using estimate ammo check. Some weapons IRL have mags which show you exactly how many bullets are left inside e.g. P90.</font>",
-					"html": true,
-					"type": "text"
-				}
-			]
+			"content": [{
+				"text": "<font size='14'>Keywords that can be added to Weapons or OMODs:<br><br><b>BitCh_DisableChamberedReload</b> - place this on weapons that should not be able to hold an extra round in the chamber e.g. revolvers.<br><br><b>BitCh_CantDropAmmo</b> - place this on weapons that should not be able to drop ammo on reload e.g. Gatling Laser.<br><br><b>BitCh_ForceBitChReload</b> - if you use TR mode, add this to weapons that lack TR patches to allow them to have BitCh reloads.<br><br><b>BitCh_ExactCheckCapability</b> - will return exact amount when using estimate ammo check. Some weapons IRL have mags which show you exactly how many bullets are left inside e.g. P90.</font>",
+				"html": true,
+				"type": "text"
+			}]
 		}
 	]
 }

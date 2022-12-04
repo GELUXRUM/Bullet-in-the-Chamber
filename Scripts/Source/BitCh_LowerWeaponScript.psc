@@ -1,101 +1,132 @@
-ScriptName BitCh_LowerWeaponScript extends Quest
+scriptName BitCh_LowerWeaponScript extends quest
 
-Group Misc
-	Actor Property PlayerRef Auto
-EndGroup
+group actors
+	actor property playerRef auto
+endGroup
 
-Group Perks
-	Perk Property FixSpeedWalkPerk Auto
-EndGroup
+group perks
+	perk property fixSpeedWalkPerk auto
+endGroup
 
-Group Animations
-	Action Property ActionSheath Auto
-	Action Property ActionGunDown Auto
-	Idle Property GunRelaxedRootPlayer Auto
-EndGroup
+Group animations
+	action property actionSheath auto
+	action property actionGunDown auto
+	idle property gunRelaxedRootPlayer auto
+endGroup
 
-Group Bools
-	bool Property MCMFixSpeedWalk = True Auto
-	bool Property EnableHolster = True Auto
+group bools
+	bool property MCMFixSpeedWalk = true auto
+	bool property enableHolster = true auto
 
-EndGroup
+endGroup
 
-Group Globals
-	GlobalVariable Property LongPressTimer Auto
-EndGroup
+group globals
+	globalVariable property longPressTimer auto
+endGroup
 
 ; used to prevent twp short presses from activating a long press
-bool InCooldown = False
+bool inCooldown = false
 ; used to track short/long keypresses
-bool HotKeyIsDown = false
+bool hotKeyIsDown = false
+; timer ID for the long-press hotkey
+int lolsterTimerID = 666
 
-Event OnInit()
-	PlayerRef = Game.GetPlayer()
-	RegisterCustomEvents()
-	If MCMFixSpeedWalk
-		PlayerRef.AddPerk(FixSpeedWalkPerk)
-	EndIf
-EndEvent
+event onInit()
+	registerCustomEvents()
+	if MCMFixSpeedWalk
+		playerRef.addPerk(fixSpeedWalkPerk)
+	endIf
+endEvent
 
-Event Actor.OnPlayerLoadGame(Actor akSender)
-	RegisterCustomEvents()
-	If MCMFixSpeedWalk
+event actor.onPlayerLoadGame(actor akSender)
+	registerCustomEvents()
+	if MCMFixSpeedWalk
 		; resetting the perk periodically is required, lest you fall victim to the ability condition bug
-		PlayerRef.RemovePerk(FixSpeedWalkPerk)
-		PlayerRef.AddPerk(FixSpeedWalkPerk)
-	EndIf
-EndEvent
+		playerRef.removePerk(fixSpeedWalkPerk)
+		playerRef.addPerk(fixSpeedWalkPerk)
+	endIf
+endEvent
 
-Event OnControlDown(string control)
-		If (control == "Lolster")
-			HotKeyIsDown = True
+;/ event onControlDown(string sControl)
+		if (sControl == "Lolster")
+			hotKeyIsDown = true
 			; we check if the player wants long presses to holster
-			If EnableHolster == True
+			if enableHolster == true
 				; wait to see if this is going to be a long press
-				Utility.Wait(LongPressTimer.GetValue()) 
+				utility.wait(longPressTimer.getValue()) 
 				; hotkey is still down, do long press stuff
-				If HotKeyIsDown && !InCooldown
+				if hotKeyIsDown && !inCooldown
 					; sheathe weapon. Both first and third person
-					PlayerRef.PlayIdleAction(ActionSheath)
+					playerRef.playIdleAction(actionSheath)
 					; hotkey is not down, do short press stuff
-				Else 
+				else 
 					; lowers weapon in first person
-					PlayerRef.PlayIdleAction(ActionGunDown)
+					playerRef.playIdleAction(actionGunDown)
 					; lowers weapon in third person
-					PlayerRef.PlayIdle(GunRelaxedRootPlayer)
-				EndIf
-			Else
+					playerRef.playIdle(gunRelaxedRootPlayer)
+				endIf
+			else
 				; if they don't want long presses to holster we just lower the weapon
-				PlayerRef.PlayIdleAction(ActionGunDown)
-				PlayerRef.PlayIdle(GunRelaxedRootPlayer)
-			EndIf
-		EndIf
-EndEvent
+				playerRef.playIdleAction(actionGunDown)
+				playerRef.playIdle(gunRelaxedRootPlayer)
+			endIf
+		endIf
+endEvent
 
-Event OnControlUp(string control, float time)
+event onControlUp(string sControl, float time)
 	; key has been released, reset the bool
-	If (control == "Lolster")
-		HotKeyIsDown = false
-		InCooldown = true
-		Utility.Wait(LongPressTimer.GetValue())
-		InCooldown = false
-	EndIf
-EndEvent
+	if (sControl == "Lolster")
+		hotKeyIsDown = false
+		inCooldown = true
+		utility.Wait(longPressTimer.getValue())
+		inCooldown = false
+	endIf
+endEvent /;
+
+
+event onControlDown(string sControl)
+    if sControl == "Lolster"
+        startTimer(longPressTimer.getValue(), lolsterTimerID)
+        hotkeyIsDown = true
+    endIf
+endEvent
+
+event onControlUp(string control, float time)
+    ;/ if the bool is true, timer hasn't ended yet
+    meaning the player released before long-press
+    has been detected /;
+    if hotkeyIsDown == true
+        ; player released the button, cancel the timer
+        cancelTimer(lolsterTimerID)
+        ; this isn't a long-press, so we lower
+        playerRef.playIdleAction(actionGunDown)
+		playerRef.playIdle(gunRelaxedRootPlayer)
+        hotkeyIsDown = false
+    endIf
+endEvent
+
+event onTimer(int aiTimerID)
+    ; timer ended, so we check ammo
+    if aiTimerID == lolsterTimerID
+        hotkeyIsDown = false
+        playerRef.playIdleAction(actionSheath)
+    endIf
+endEvent
 
 ; registrations for events
-Function RegisterCustomEvents()
-	RegisterForRemoteEvent(PlayerRef, "OnPlayerLoadGame")
-EndFunction
+Function registerCustomEvents()
+	registerForRemoteEvent(playerRef, "onPlayerLoadGame")
+endFunction
 
 ; add or remove the fix speed walk perk
-Function ToggleFixSpeedWalk(bool bToggle)
-	If bToggle
-		PlayerRef.AddPerk(FixSpeedWalkPerk)
-	Else
-		PlayerRef.RemovePerk(FixSpeedWalkPerk)
-	EndIf
-EndFunction
+function toggleFixSpeedWalk(bool bToggle)
+	if bToggle
+		playerRef.addPerk(fixSpeedWalkPerk)
+	else
+		playerRef.removePerk(fixSpeedWalkPerk)
+	endIf
+endFunction
 
-Function CheckWeaponControls()
-	Input.GetMappedControl(1)
-EndFunction
+function checkWeaponControls()
+	input.getMappedControl(1)
+endFunction

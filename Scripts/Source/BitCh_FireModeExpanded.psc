@@ -1,9 +1,13 @@
-ScriptName BitCh_FireModeExpanded extends Quest
+scriptName BitCh_FireModeExpanded extends quest
 {script by eclix used to allow auto weapons to fire in semi-auto}
 
 Group Actions
     Action Property ActionRightRelease Auto
 EndGroup
+
+group actors
+    actor property playerRef auto
+endGroup
 
 Group Keywords
     ;/ we only want weapons that are automatic by default to be
@@ -17,10 +21,7 @@ Group Sounds
     Sound Property SwitchSound Auto
 EndGroup
 
-Actor PlayerRef
-
 Event OnInit()
-    PlayerRef = Game.GetPlayer()
     RegisterForControl("PrimaryAttack")
     RegisterForRemoteEvent(PlayerRef, "OnPlayerLoadGame")
 EndEvent
@@ -42,10 +43,10 @@ Function ToggleFireMode()
     ; check if the gun is automatic
     If (PlayerRef.WornHasKeyword(WeaponTypeAutomatic))
         ; some stuff to make life easier when writing the rest of the script:
-        int slotIndex = Game.GetPlayer().GetEquippedItemType(0) + 32
-        instanceData:Owner thisInstance = Game.GetPlayer().GetInstanceOwner(slotIndex)
+        int slotIndex = playerRef.GetEquippedItemType(0) + 32
+        instanceData:Owner thisInstance = playerRef.GetInstanceOwner(slotIndex)
         ; the player
-        Actor ThePlayer = Game.GetPlayer()
+        Actor ThePlayer = playerRef
         ; current weapon
         Weapon TheWeapon = ThePlayer.GetEquippedWeapon(0)
         ; we check if their weapon is already in semi auto mode

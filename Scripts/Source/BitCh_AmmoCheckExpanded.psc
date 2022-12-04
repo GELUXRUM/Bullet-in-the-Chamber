@@ -1,249 +1,263 @@
-Scriptname BitCh_AmmoCheckExpanded Extends Quest
+scriptname BitCh_AmmoCheckExpanded extends quest
 
 ;--------------------------------------------------------------------
 ; PROPERTY GROUPS
 ;--------------------------------------------------------------------
 
+group actors
+    actor property playerRef auto
+    {the player}
+endGroup
+
 ; stuff for the MCM
-Group MCM_Booleans
-    Bool Property AmmoCapacityEnabled = True Auto
-    Bool Property AmmoNameEnabled = True Auto
-    Bool Property ModeFallUI = False Auto
-    Bool Property LowerExact = True Auto
-    Bool Property LowerNormal = True Auto
-    Bool Property ReserveNotifEnabled = True Auto
-    Bool Property MultiKeyUseEstimate = True Auto
-    Bool Property SoundsNormal = True Auto
-    Bool Property SoundsExact = True Auto
+group MCM_Booleans
+    bool property ammoCapacityEnabled = true auto
+    {track if ammo check shows max capacity}
+    bool property ammoNameEnabled = true auto
+    {track if ammo check shows ammo name}
+    bool property reserveNotifEnabled = true auto
+    {track if ammo check shows ammo in inventory}
+    bool property modeFallUI = false auto
+    {track if FallUI is on}
+    bool property lowerNormal = true auto
+    {track if weapon gets lowered during estimate check}
+    bool property lowerExact = true auto
+    {track if weapon gets lowered during exact check}
+    bool property multiKeyUseEstimate = true auto
+    {idk, eclix made this for his multi-use function}
+    bool property soundsNormal = true auto
+    {track if ammo check play sounds during estimate check}
+    bool property soundsExact = true auto
+    {track if ammo check play sounds during exact check}
 EndGroup
 
 ; more stuff for the MCM
-Group MCM_Globals
-    GlobalVariable Property MCM_AlmostFull Auto
-    GlobalVariable Property MCM_AlmostEmpty Auto
-    GlobalVariable Property BlockGunUp Auto
+group MCM_Globals
+    globalVariable property MCM_AlmostFull auto
+    {track amount of ammo as a % needed to show "Almost full"}
+    globalVariable property MCM_AlmostEmpty auto
+    {track amount of ammo as a % needed to show "Almost empty"}
+    globalVariable property blockGunUp auto
+    {track whether the weapon can be raised or not during ammo check}
 EndGroup
 
-Group Globals
-	GlobalVariable Property LongPressTimer Auto
+group globals
+	globalVariable property longPressTimer auto
+    {how long it needs to be held to count as a long press}
 EndGroup
 
 ; stuff to play a little animation on ammo check
-Group Actions
-    Action Property ActionGunDown Auto
-    Action Property ActionReload Auto
+group actions
+    action property actionGunDown auto
+    action property actionReload auto
 EndGroup
 
-Group Keywords
-    Keyword Property ExactCheckCapability Auto
-    Keyword Property WeaponTypePistol Auto
+group keywords
+    keyword property exactCheckCapability auto
 EndGroup
 
-Group Sounds
-    Sound Property AmmoCheckSounds Auto
+group sounds
+    sound property ammoCheckSounds auto
 EndGroup
 
-Actor Property PlayerRef Auto
-; used to prevent two short presses from activating a long press
-bool InCooldown = False
+;--------------------------------------------------------------------
+; VARIABLES
+;--------------------------------------------------------------------
+
 ; used to track short/long keypresses
-bool HotKeyIsDown = false
-
-Event OnInit()
-    PlayerRef = Game.GetPlayer()
-EndEvent
+bool hotKeyIsDown = false
+; timer ID for the long-press hotkey
+int reloadCheckTimerID = 21
+; timer for animations during ammo check
+float timerTimer = 1.5
 
 ;--------------------------------------------------------------------
 ; EVENT
 ;--------------------------------------------------------------------
-Event OnControlDown(string control)
-    If (control == "ReloadCheck")
-        HotKeyIsDown = True
-        ; wait to see if this is going to be a long press
-        Utility.Wait(LongPressTimer.GetValue())
-        ; hotkey is still down, do long press stuff
-        If HotKeyIsDown && !InCooldown
-            ;check if we want estimate or exact ammo check
-            If MultiKeyUseEstimate
-                EstimateAmmoCheck()
-            Else
-                ExactAmmoCheck()
-            EndIf
-        ; do short press stuff
-        Else 
-            ; reload
-            PlayerRef.PlayIdleAction(ActionReload)
-        EndIf
-    EndIf
-EndEvent
 
-Event OnControlUp(string control, float time)
-; key has been released, reset the bool
-If (control == "ReloadCheck")
-    HotKeyIsDown = false
-    InCooldown = true
-    Utility.Wait(LongPressTimer.GetValue())
-    InCooldown = false
-EndIf
-EndEvent
+event onControlDown(string sControl)
+    if sControl == "reloadCheck"
+        startTimer(longPressTimer.getValue(), reloadCheckTimerID)
+        hotkeyIsDown = true
+    endIf
+endEvent
+
+event onControlUp(string control, float time)
+    ;/ if the bool is true, timer hasn't ended yet
+    meaning the player released before long-press
+    has been detected /;
+    if hotkeyIsDown == true
+        ; player released the button, cancel the timer
+        cancelTimer(reloadCheckTimerID)
+        ; this isn't a long-press, so we reload
+        playerRef.playIdleAction(actionReload)
+        hotkeyIsDown = false
+    endIf
+endEvent
+
+event onTimer(int aiTimerID)
+    ; timer ended, so we check ammo
+    if aiTimerID == reloadCheckTimerID
+        hotkeyIsDown = false
+        if multiKeyUseEstimate
+            estimateAmmoCheck()
+        else
+            exactAmmoCheck()
+        endIf
+    endIf
+endEvent
 
 ;--------------------------------------------------------------------
 ; FUNCTIONS
 ;--------------------------------------------------------------------
 
-Function EstimateAmmoCheck()
+function estimateAmmoCheck()
+
     ;--------------------------------------------------------------------
+
 	; instance stuff Greslin did for me because I am noob
-	int slotIndex = Game.GetPlayer().GetEquippedItemType(0) + 32
-	instanceData:Owner thisInstance = Game.GetPlayer().GetInstanceOwner(slotIndex)
+	int slotIndex = playerRef.GetEquippedItemType(0) + 32
+	instanceData:Owner thisInstance = playerRef.getInstanceOwner(slotIndex)
 	; some stuff to make life easier when writing the rest of the script
-	; the player
-	Actor ThePlayer = Game.GetPlayer()
 	; current weapon
-	Weapon TheWeapon = ThePlayer.GetEquippedWeapon(0)
+	weapon theWeapon = playerRef.getEquippedWeapon(0)
 	;/ current ammo type in use. Must grab using instanceData otherwise it uses
     the default found in the weapon record /;
-	Ammo ChamberedAmmo = instanceData.GetAmmo(thisInstance)
+	ammo chamberedAmmo = instanceData.getAmmo(thisInstance)
     ; max ammo that can be held by the weapon's magazine
-    int MaxAmmo = instanceData.GetAmmoCapacity(thisInstance) as int
+    int maxAmmo = instanceData.getAmmoCapacity(thisInstance) as int
     ; ammo currently left in the weapon's magazine
-    int CurrentAmmo = UI.Get( "HUDMenu", "root.RightMeters_mc.AmmoCount_mc.ClipCount_tf.text" ) as int
+    int currentAmmo = UI.get( "HUDMenu", "root.RightMeters_mc.AmmoCount_mc.ClipCount_tf.text" ) as int
     ; the amount of ammo that is left in the player's inventory
-    int ReserveAmmo = MaxAmmo - CurrentAmmo
+    int reserveAmmo = maxAmmo - currentAmmo
     ;/ ammo currently left in the weapon's magazine as a %. Must be cast as
     float, otherwise it doesn't work properly /;
-    float AmmoPercentage = (CurrentAmmo as float) / (MaxAmmo as float) * 100
-    ; timer for animations during ammo check
-    float TimerTimer = 1.5
+    float ammoPercentage = (currentAmmo as float) / (maxAmmo as float) * 100
 
 	;--------------------------------------------------------------------
 
     ; check if the player has a weapon AND if the weapon is not melee AND whether it's drawn
-    If TheWeapon as bool && ChamberedAmmo as bool && ThePlayer.IsWeaponDrawn() as bool
+    if theWeapon as bool && chamberedAmmo as bool && playerRef.isWeaponDrawn() as bool
         ; check if the player wants to play a little animation
-        If LowerNormal == True
+        if lowerNormal == true
             ; lower weapon
-            ThePlayer.PlayIdleAction(ActionGunDown)
+            playerRef.playIdleAction(actionGunDown)
             ; block the weapon from being raised
-            BlockGunUp.SetValue(1)
-            ; Play the ammo check sounds
-            If SoundsNormal
-                AmmoCheckSounds.Play(ThePlayer)
-            EndIf
+            blockGunUp.setValue(1)
+            ; play the ammo check sounds
+            if soundsNormal
+                ammoCheckSounds.play(playerRef)
+            endIf
             ; wait a bit
-            Utility.Wait(TimerTimer)
+            utility.wait(timerTimer)
             ; allow the weapon to be raised
-            BlockGunUp.SetValue(0)
+            blockGunUp.setValue(0)
             ; raise the weapon
-            ThePlayer.PlayIdleAction(ActionGunDown)
-        EndIf
+            playerRef.playIdleAction(actionGunDown)
+        endIf
         ;/ checks to see how much ammo is left as a % and a 
         message is displayed to give the player a rough idea
         of how much is left /;
-        If (instancedata.GetKeywords(thisInstance)).Find(ExactCheckCapability) == -1
-            If AmmoPercentage == 100.0
-                Debug.Notification("Full")
-            ElseIf AmmoPercentage <= 60.0 && AmmoPercentage >= 40.0 
-                Debug.Notification("About half")
-            ElseIf AmmoPercentage == 0.0
-                Debug.Notification("Empty")
-            ElseIf AmmoPercentage >= MCM_AlmostFull.GetValue() as float
-                Debug.Notification("Almost full")
-            Elseif AmmoPercentage > 60.0
-                Debug.Notification("More than half")
-            ElseIf AmmoPercentage > MCM_AlmostEmpty.GetValue() as float
-                Debug.Notification("Less than half")
-            Else
-                Debug.Notification("Almost empty")
-            EndIf
-        Else
-            Debug.Notification(CurrentAmmo as string + "/" + MaxAmmo as string)
-        EndIf
-    EndIf
-EndFunction
+        if (instancedata.GetKeywords(thisInstance)).find(exactCheckCapability) == -1
+            if ammoPercentage == 100.0
+                debug.notification("Full")
+            elseIf ammoPercentage <= 60.0 && ammoPercentage >= 40.0 
+                debug.notification("About half")
+            elseIf ammoPercentage == 0.0
+                debug.notification("Empty")
+            elseIf ammoPercentage >= MCM_AlmostFull.GetValue() as float
+                debug.notification("Almost full")
+            elseIf ammoPercentage > 60.0
+                debug.notification("More than half")
+            elseIf ammoPercentage > MCM_AlmostEmpty.GetValue() as float
+                debug.notification("Less than half")
+            else
+                debug.notification("Almost empty")
+            endIf
+        else
+            debug.notification(currentAmmo as string + "/" + maxAmmo as string)
+        endIf
+    endIf
+endFunction
 
-Function ExactAmmoCheck()
+function exactAmmoCheck()
     
     ;--------------------------------------------------------------------
     
 	; instance stuff Greslin did for me because I am noob
-	int slotIndex = Game.GetPlayer().GetEquippedItemType(0) + 32
-	instanceData:Owner thisInstance = Game.GetPlayer().GetInstanceOwner(slotIndex)
+	int slotIndex = playerRef.GetEquippedItemType(0) + 32
+	instanceData:Owner thisInstance = playerRef.getInstanceOwner(slotIndex)
 	; some stuff to make life easier when writing the rest of the script
-	; the player
-	Actor ThePlayer = Game.GetPlayer()
 	; current weapon
-	Weapon TheWeapon = ThePlayer.GetEquippedWeapon(0)
+	weapon theWeapon = playerRef.getEquippedWeapon(0)
 	;/ current ammo type in use. Must grab using instanceData otherwise it uses
     the default found in the weapon record /;
-	Ammo ChamberedAmmo = instanceData.GetAmmo(thisInstance)
+	ammo chamberedAmmo = instanceData.getAmmo(thisInstance)
     ; max ammo that can be held by the weapon's magazine
-    int MaxAmmo = instanceData.GetAmmoCapacity(thisInstance) as int
+    int maxAmmo = instanceData.getAmmoCapacity(thisInstance) as int
     ; ammo currently left in the weapon's magazine
-    int CurrentAmmo = UI.Get( "HUDMenu", "root.RightMeters_mc.AmmoCount_mc.ClipCount_tf.text" ) as int
+    int currentAmmo = UI.get( "HUDMenu", "root.RightMeters_mc.AmmoCount_mc.ClipCount_tf.text" ) as int
     ; the amount of ammo that is left in the player's inventory
-    int ReserveAmmo = ThePlayer.GetItemCount(ChamberedAmmo) - CurrentAmmo
+    int reserveAmmo = maxAmmo - currentAmmo
     ;/ ammo currently left in the weapon's magazine as a %. Must be cast as
     float, otherwise it doesn't work properly /;
-    float AmmoPercentage = (CurrentAmmo as float) / (MaxAmmo as float) * 100
-    ; timer for animations during ammo check
-    float TimerTimer = 1.5
+    float ammoPercentage = (currentAmmo as float) / (maxAmmo as float) * 100
     ; string for ammo check output
-    string Output = (CurrentAmmo) as string
+    string output = (currentAmmo) as string
 
 	;--------------------------------------------------------------------
 
     ; check if the player has a weapon AND if the weapon is not melee AND whether it's drawn
-    If TheWeapon as bool && ChamberedAmmo as bool && ThePlayer.IsWeaponDrawn() as bool
+    if theWeapon as bool && chamberedAmmo as bool && playerRef.isWeaponDrawn() as bool
         ; check if the player wants to play a little animation
-        If LowerExact == True
+        if lowerExact == true
             ; lower weapon
-            ThePlayer.PlayIdleAction(ActionGunDown)
+            playerRef.playIdleAction(actionGunDown)
             ; block the weapon from being raised
-            BlockGunUp.SetValue(1)
-             ; Play the ammo check sounds
-             If SoundsExact
-                AmmoCheckSounds.Play(ThePlayer)
-            EndIf
+            blockGunUp.setValue(1)
+            ; play the ammo check sounds
+            if soundsExact
+                ammoCheckSounds.play(playerRef)
+            endIf
             ; wait a bit
-            Utility.Wait(TimerTimer)
+            utility.wait(timerTimer)
             ; allow the weapon to be raised
-            BlockGunUp.SetValue(0)
+            blockGunUp.setValue(0)
             ; raise the weapon
-            ThePlayer.PlayIdleAction(ActionGunDown)
-        EndIf
-        
+            playerRef.playIdleAction(actionGunDown)
+        endIf
+
         ; optional mode for FallUI users
-        If ModeFallUI == True
+        if modeFallUI == true
             ; check if the player wants to see max capacity
-            If AmmoCapacityEnabled == True
-                Output = Output + "/" + (MaxAmmo) as string
-            EndIf
+            if ammoCapacityEnabled == true
+                output = output + "/" + (maxAmmo) as string
+            endIf
             ;/ check if the player wants to see how much ammo they are
             currently holding in their inventory /;
-            If ReserveNotifEnabled == True
-                Output = Output + " | " + (ReserveAmmo) as string
-            EndIf
+            if reserveNotifEnabled == true
+                output = output + " | " + (reserveAmmo) as string
+            endIf
             ; check if the player wants to be told what ammo they're using
-            If AmmoNameEnabled == True
+            if ammoNameEnabled == true
                 ;/ using a bullet point here to keep consistency and not break
                 the automatic FallUI formatting /;
-                Output = Output + " | " + ChamberedAmmo.GetName() as string 
-            EndIf
+                output = output + " | " + chamberedAmmo.getName() as string 
+            endIf
         ; same thing as before but for non-FallUI users    
-        ElseIf ModeFallUI == False
-            If AmmoCapacityEnabled == True
-                Output = Output + "/" + (MaxAmmo) as string
-            EndIf
-            If ReserveNotifEnabled == True
-                Output = Output + " • " + (ReserveAmmo) as string
-            EndIf
-            If AmmoNameEnabled == True
-                Output = Output + " • " + ChamberedAmmo.GetName() as string 
-            EndIf
-        EndIf
+        elseIf modeFallUI == false
+            if ammoCapacityEnabled == true
+                output = output + "/" + (maxAmmo) as string
+            endIf
+            if reserveNotifEnabled == true
+                output = output + " • " + (reserveAmmo) as string
+            endIf
+            if ammoNameEnabled == true
+                output = output + " • " + ChamberedAmmo.GetName() as string 
+            endIf
+        endIf
         ; output the ammo check notification
-        Debug.Notification(Output)
-	EndIf
-    
+        debug.notification(output)
+	endIf
+
 EndFunction
