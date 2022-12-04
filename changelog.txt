@@ -1,0 +1,11 @@
+1.2 - GELUXRUM
+New features:
+Button to refresh the mod if it stops working
+Button to disable the mod if you want to safely uninstall it
+Ammo drop now has a configurable hotkey
+
+Bugs fixed:
+Jumping has been blocked when reloading as a workaround to an engine bug
+Revolvers and bolt-actions don't drop ammo during the post-fire animations
+Using Power Armor doesn't disable the mod anymore
+Long-press hotkeys now work properly :^)
