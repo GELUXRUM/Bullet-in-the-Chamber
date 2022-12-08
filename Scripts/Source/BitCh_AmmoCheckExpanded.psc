@@ -69,6 +69,7 @@ bool hotKeyIsDown = false
 ; timer ID for the long-press hotkey
 int reloadCheckTimerID = 21
 ; timer for animations during ammo check
+; TODO make it configurable
 float timerTimer = 1.5
 
 ;--------------------------------------------------------------------
@@ -129,7 +130,7 @@ function estimateAmmoCheck()
     ; ammo currently left in the weapon's magazine
     int currentAmmo = UI.get( "HUDMenu", "root.RightMeters_mc.AmmoCount_mc.ClipCount_tf.text" ) as int
     ; the amount of ammo that is left in the player's inventory
-    int reserveAmmo = maxAmmo - currentAmmo
+    int reserveAmmo = playerRef.getItemCount(chamberedAmmo as Form) as int - CurrentAmmo
     ;/ ammo currently left in the weapon's magazine as a %. Must be cast as
     float, otherwise it doesn't work properly /;
     float ammoPercentage = (currentAmmo as float) / (maxAmmo as float) * 100
@@ -198,7 +199,7 @@ function exactAmmoCheck()
     ; ammo currently left in the weapon's magazine
     int currentAmmo = UI.get( "HUDMenu", "root.RightMeters_mc.AmmoCount_mc.ClipCount_tf.text" ) as int
     ; the amount of ammo that is left in the player's inventory
-    int reserveAmmo = maxAmmo - currentAmmo
+    int reserveAmmo = playerRef.getItemCount(chamberedAmmo as Form) as int - CurrentAmmo
     ;/ ammo currently left in the weapon's magazine as a %. Must be cast as
     float, otherwise it doesn't work properly /;
     float ammoPercentage = (currentAmmo as float) / (maxAmmo as float) * 100

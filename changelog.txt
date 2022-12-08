@@ -1,3 +1,10 @@
+1.2.2 - GELUXRUM
+Changes:
+Jumping is now blocked only during ammo drop.
+
+Bugs fixed:
+Reserve ammo notifications work properly now
+
 1.2 - GELUXRUM
 New features:
 Button to refresh the mod if it stops working

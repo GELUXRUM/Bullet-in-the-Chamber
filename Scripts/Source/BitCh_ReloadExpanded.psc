@@ -35,12 +35,6 @@ endGroup
 
 ; Tactical Reload keyword
 keyword AnimsReloadReserve
-; Input Layer
-inputEnableLayer inputLayer
-; timer ID
-int jumpTimerID = 69
-; how long to block the jump for until the failsafe kicks in
-float jumpBlockTimer = 5.0
 ; used to store some messages for debugging
 string onInitDebug = "Event registration:\n"
 
@@ -104,11 +98,6 @@ event onAnimationEvent(objectReference akSender, string sEvent)
     
     ; player starts reloading
     if sEvent == "reloadStateEnter"
-        ; call a function that blocks jump
-        inputLayer = inputEnableLayer.create()
-        inputLayer.enableJumping(false)
-        ; start failsafe timer
-        startTimer(jumpBlockTimer, jumpTimerID)
         ; check if weapon isn't excluded
         if (instanceData.getKeywords(thisInstance)).find(disableChamberedReload) == -1
             if BitChAllow == true
@@ -153,12 +142,6 @@ event onAnimationEvent(objectReference akSender, string sEvent)
 
     ; player finishes reloading
     if sEvent == "reloadStateExit"
-        ; enable jumping
-        inputLayer.enableJumping(true)
-        ; delete the layer
-        inputLayer.delete()
-        ; cancel failsafe timer
-        cancelTimer(jumpTimerID)
         ; check if weapon has a chambered round
         if (instanceData.getKeywords(thisInstance)).find(chamberedReload) == -1
             ; check if enabled and weapon isn't excluded
@@ -189,16 +172,6 @@ event onAnimationEvent(objectReference akSender, string sEvent)
         instanceData.SetAmmoCapacity(thisInstance, AmmoCapacity + 1)
     endIf
 
-endEvent
-
-event onTimer(int aiTimerID)
-    ; failsafe timer has ended
-    if aiTimerID == jumpTimerID
-        ; enable jumping
-        inputLayer.enableJumping(true)
-        ; delete the layer
-        inputLayer.delete()
-    endIf
 endEvent
 
 ; entering Power Armor will break registered events

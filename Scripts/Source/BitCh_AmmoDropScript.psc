@@ -41,6 +41,12 @@ float ammoDropCooldownTimer = 4.20
 ;/ hopefully enough time for any post-fire
 animation to stop playing /;
 float boltActionTimer = 1.0
+; Input Layer
+inputEnableLayer inputLayer
+; how long to block the jump for until the failsafe kicks in
+float jumpBlockTimer = 5.0
+; jump timer ID
+int jumpTimerID = 69
 
 ;--------------------------------------------------------------------
 ; EVENTS
@@ -71,6 +77,7 @@ endEvent
 event onControlDown(string sControl)
     ; custom event sent by hotkey from MCM
     if sControl == "ammoDropEvent"
+        debug.trace("e")
         ; while held, allow ammo drop
         ammoDropKeyHeld = true
     endIf
@@ -79,6 +86,7 @@ endEvent
 event onControlUp(string sControl, float time)
     ; custom event sent by hotkey from MCM
     if sControl == "ammoDropEvent"
+        debug.trace("b")
         ; when released, block ammo drop
         ammoDropKeyHeld = false
     endIf
@@ -92,6 +100,7 @@ event onAnimationEvent(objectReference akSender, string sEvent)
     
     ; player starts reloading and ammo drop button is held
     if sEvent == "reloadStateEnter" && ammoDropKeyHeld == true
+        debug.trace("d")
         ; set up the weapon instance
         int slotIndex = playerRef.getEquippedItemType(0) + 32
         instanceData:Owner thisInstance = playerRef.getInstanceOwner(slotIndex)
@@ -111,6 +120,11 @@ event onAnimationEvent(objectReference akSender, string sEvent)
             the player from spamming the ammo drop key and dumping all
             of their ammo in seconds /;
             ammoDropCooldown = true
+            ; call a function that blocks jump
+            inputLayer = inputEnableLayer.create()
+            inputLayer.enableJumping(false)
+            ; start failsafe timer
+            startTimer(jumpBlockTimer, jumpTimerID)
             ;/ wait a bit to simulate the time take to pull out the mag
             I could have used a timer, but it'd most likely require me to
             set up the instance and variables again, which is just extra
@@ -171,11 +185,26 @@ event onAnimationEvent(objectReference akSender, string sEvent)
     
     ; player finishes reloading
     if sEvent == "reloadStateExit"
+        ;/ gets set to true after jumping is disabled because
+        using inputLayer.isJumpingEnabled() == false leads to a
+        bunch of errors in the debug console presumably due to
+        the inputLayer not being created unless ammo drop is
+        activated. Too lazy to fix and this works so w/e /;
+        if ammoDropCooldown == true
+            debug.trace("jumping disabled")
+            ; enable jumping
+            inputLayer.enableJumping(true)
+            ; delete the layer
+            inputLayer.delete()
+            ; cancel failsafe timer
+            cancelTimer(jumpTimerID)
+        endIf
         ; allow ammo drop again
         ammoDropCooldown = false
         ; cancel the timer
         cancelTimer(ammoDropCooldownTimerID)
     endIf
+
     ;/ revolvers and bolt actions fire reload events
     during the post-fire animations /;
     if sEvent == "weaponFire"
@@ -204,6 +233,13 @@ event onTimer(int aiTimerID)
     if aiTimerID == boltActionTimerID
         ; register the event again so that ammo drop continues working
         registerForAnimationEvent(playerRef, "reloadStateEnter")
+    endIf
+    ; jump block failsafe timer has ended
+    if aiTimerID == jumpTimerID
+        ; enable jumping
+        inputLayer.enableJumping(true)
+        ; delete the layer
+        inputLayer.delete()
     endIf
 endEvent
 

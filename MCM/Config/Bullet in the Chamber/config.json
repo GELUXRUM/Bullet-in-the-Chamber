@@ -272,6 +272,11 @@
 					}
 				},
 				{
+					"text": "<font size='14' color='#AAAAAA'>• Due to an engine bug, jumping is disabled when reloading with ammo drop triggered.</font>",
+					"html": true,
+					"type": "text"
+				},
+				{
 					"text": "Delete Ammo On Reload",
 					"type": "switcher",
 					"help": "Enable Ammo Drop must also be ON. Deletes the ammo completely instead of dropping it on the ground. ",
