@@ -14,6 +14,8 @@ group MCM
     {control whether Ammo Drop is on/off}
 	bool property ammoDropDelete = false auto
     {control if dropped ammo gets deleted}
+    bool property ammoDropCombat = false auto
+    {only drop ammo in combat}
 endGroup
 
 group scripts
@@ -114,32 +116,130 @@ event onAnimationEvent(objectReference akSender, string sEvent)
         ;--------------------------------------------------------------------
 
         if ammoDropAllow == true && (instanceData.getKeywords(thisInstance)).find(reloadScript.cantDropAmmo) == -1 && ammoDropCooldown == false
-            ; we want to prevent ammo drop spam from occuring, so we use a timer
-            startTimer(ammoDropCooldownTimer, ammoDropCooldownTimerID)
-            ;/ when set to true, ammo drop is blocked. This prevents
-            the player from spamming the ammo drop key and dumping all
-            of their ammo in seconds /;
-            ammoDropCooldown = true
-            ; call a function that blocks jump
-            inputLayer = inputEnableLayer.create()
-            inputLayer.enableJumping(false)
-            ; start failsafe timer
-            startTimer(jumpBlockTimer, jumpTimerID)
-            ;/ wait a bit to simulate the time take to pull out the mag
-            I could have used a timer, but it'd most likely require me to
-            set up the instance and variables again, which is just extra
-            script overhead :/ /;
-            utility.wait(0.420)
-            if reloadScript.BitChAllow == true
-                ; check if TR mode is available
-                if reloadScript.modeTR == true && AnimsReloadReserve
-                    ; check if weapon is TR-enabled either via real or fake TR keyword
-                    if (instanceData.getKeywords(thisInstance)).find(AnimsReloadReserve) != -1 || (instanceData.getKeywords(thisInstance)).find(reloadScript.forceBitChReload) != -1
-                        ; check ammo and if weapon can chamber ammo
+            ;/ DISCLAIMER
+            I'm way too lazy to rewrite this to accomodate this new feature
+            so I am just going to copy and paste the code twice. Sue me /;
+            ; check if ammo drop is combat-only
+            if ammoDropCombat == true
+                ; if so, check if they are in combat
+                if PlayerRef.IsInCombat() == true
+                ; we want to prevent ammo drop spam from occuring, so we use a timer
+                startTimer(ammoDropCooldownTimer, ammoDropCooldownTimerID)
+                ;/ when set to true, ammo drop is blocked. This prevents
+                the player from spamming the ammo drop key and dumping all
+                of their ammo in seconds /;
+                ammoDropCooldown = true
+                ; call a function that blocks jump
+                inputLayer = inputEnableLayer.create()
+                inputLayer.enableJumping(false)
+                ; start failsafe timer
+                startTimer(jumpBlockTimer, jumpTimerID)
+                ;/ wait a bit to simulate the time take to pull out the mag
+                I could have used a timer, but it'd most likely require me to
+                set up the instance and variables again, which is just extra
+                script overhead :/ /;
+                utility.wait(0.420)
+                    if reloadScript.BitChAllow == true
+                        ; check if TR mode is available
+                        if reloadScript.modeTR == true && AnimsReloadReserve
+                            ; check if weapon is TR-enabled either via real or fake TR keyword
+                            if (instanceData.getKeywords(thisInstance)).find(AnimsReloadReserve) != -1 || (instanceData.getKeywords(thisInstance)).find(reloadScript.forceBitChReload) != -1
+                                ; check ammo and if weapon can chamber ammo
+                                if currentAmmo != 0 && (instanceData.getKeywords(thisInstance)).find(reloadScript.disableChamberedReload) == -1
+                                    playerRef.removeItem(chamberedAmmo, currentAmmo - 1, true, none)
+                                    if ammoDropDelete == false
+                                        ; drop ammo at ~knee height to prevent clipping
+                                        (playerRef.placeAtMe(chamberedAmmo as form, currentAmmo - 1, false, false, true)).moveTo(playerRef, afZOffset = 33.0)
+                                    endIf
+                                ; if weapon can't chamber ammo - drop everything
+                                elseIf currentAmmo != 0
+                                    playerRef.removeItem(chamberedAmmo, currentAmmo, true, none)
+                                    if ammoDropDelete == false
+                                        (playerRef.placeAtMe(chamberedAmmo as form, currentAmmo, false, false, true)).moveTo(playerRef, afZOffset = 33.0)
+                                    endIf
+                                endIf
+                            ; weapon isn't TR-enabled, so we drop everything
+                            else
+                                playerRef.removeItem(chamberedAmmo, currentAmmo, true, none)
+                                if ammoDropDelete == false
+                                    (playerRef.placeAtMe(chamberedAmmo as form, currentAmmo, false, false, true)).moveTo(playerRef, afZOffset = 33.0)
+                                endIf
+                            endIf
+                        ; TR mode unavailable
+                        else
+                            ; check ammo amount and if weapon can chamber ammo
+                            if currentAmmo != 0 && (instanceData.getKeywords(thisInstance)).find(reloadScript.disableChamberedReload) == -1
+                                ; this weapon can chamber a round, so we drop 1 less
+                                playerRef.removeItem(chamberedAmmo, currentAmmo - 1, true, none)
+                                if ammoDropDelete == false
+                                    (playerRef.placeAtMe(chamberedAmmo as form, currentAmmo - 1, false, false, true)).moveTo(playerRef, afZOffset = 33.0)
+                                endIf
+                            ; if weapon can't chamber ammo - drop everything
+                            elseIf currentAmmo != 0
+                                playerRef.removeItem(chamberedAmmo, currentAmmo, true, none)
+                                if ammoDropDelete == false
+                                    (playerRef.placeAtMe(chamberedAmmo as form, currentAmmo, false, false, true)).moveTo(playerRef, afZOffset = 33.0)
+                                endIf
+                            endIf
+                        endIf
+                    ; if BitCh is disabled, drop all ammo
+                    else
+                        playerRef.removeItem(chamberedAmmo, currentAmmo, true, none)
+                        if ammoDropDelete == false
+                            (playerRef.placeAtMe(chamberedAmmo as form, currentAmmo, false, false, true)).moveTo(playerRef, afZOffset = 33.0)
+                        endIf
+                    endIf
+                endIf
+            else
+                ; we want to prevent ammo drop spam from occuring, so we use a timer
+                startTimer(ammoDropCooldownTimer, ammoDropCooldownTimerID)
+                ;/ when set to true, ammo drop is blocked. This prevents
+                the player from spamming the ammo drop key and dumping all
+                of their ammo in seconds /;
+                ammoDropCooldown = true
+                ; call a function that blocks jump
+                inputLayer = inputEnableLayer.create()
+                inputLayer.enableJumping(false)
+                ; start failsafe timer
+                startTimer(jumpBlockTimer, jumpTimerID)
+                ;/ wait a bit to simulate the time take to pull out the mag
+                I could have used a timer, but it'd most likely require me to
+                set up the instance and variables again, which is just extra
+                script overhead :/ /;
+                utility.wait(0.420)
+                if reloadScript.BitChAllow == true
+                    ; check if TR mode is available
+                    if reloadScript.modeTR == true && AnimsReloadReserve
+                        ; check if weapon is TR-enabled either via real or fake TR keyword
+                        if (instanceData.getKeywords(thisInstance)).find(AnimsReloadReserve) != -1 || (instanceData.getKeywords(thisInstance)).find(reloadScript.forceBitChReload) != -1
+                            ; check ammo and if weapon can chamber ammo
+                            if currentAmmo != 0 && (instanceData.getKeywords(thisInstance)).find(reloadScript.disableChamberedReload) == -1
+                                playerRef.removeItem(chamberedAmmo, currentAmmo - 1, true, none)
+                                if ammoDropDelete == false
+                                    ; drop ammo at ~knee height to prevent clipping
+                                    (playerRef.placeAtMe(chamberedAmmo as form, currentAmmo - 1, false, false, true)).moveTo(playerRef, afZOffset = 33.0)
+                                endIf
+                            ; if weapon can't chamber ammo - drop everything
+                            elseIf currentAmmo != 0
+                                playerRef.removeItem(chamberedAmmo, currentAmmo, true, none)
+                                if ammoDropDelete == false
+                                    (playerRef.placeAtMe(chamberedAmmo as form, currentAmmo, false, false, true)).moveTo(playerRef, afZOffset = 33.0)
+                                endIf
+                            endIf
+                        ; weapon isn't TR-enabled, so we drop everything
+                        else
+                            playerRef.removeItem(chamberedAmmo, currentAmmo, true, none)
+                            if ammoDropDelete == false
+                                (playerRef.placeAtMe(chamberedAmmo as form, currentAmmo, false, false, true)).moveTo(playerRef, afZOffset = 33.0)
+                            endIf
+                        endIf
+                    ; TR mode unavailable
+                    else
+                        ; check ammo amount and if weapon can chamber ammo
                         if currentAmmo != 0 && (instanceData.getKeywords(thisInstance)).find(reloadScript.disableChamberedReload) == -1
+                            ; this weapon can chamber a round, so we drop 1 less
                             playerRef.removeItem(chamberedAmmo, currentAmmo - 1, true, none)
                             if ammoDropDelete == false
-                                ; drop ammo at ~knee height to prevent clipping
                                 (playerRef.placeAtMe(chamberedAmmo as form, currentAmmo - 1, false, false, true)).moveTo(playerRef, afZOffset = 33.0)
                             endIf
                         ; if weapon can't chamber ammo - drop everything
@@ -149,35 +249,13 @@ event onAnimationEvent(objectReference akSender, string sEvent)
                                 (playerRef.placeAtMe(chamberedAmmo as form, currentAmmo, false, false, true)).moveTo(playerRef, afZOffset = 33.0)
                             endIf
                         endIf
-                    ; weapon isn't TR-enabled, so we drop everything
-                    else
-                        playerRef.removeItem(chamberedAmmo, currentAmmo, true, none)
-                        if ammoDropDelete == false
-                            (playerRef.placeAtMe(chamberedAmmo as form, currentAmmo, false, false, true)).moveTo(playerRef, afZOffset = 33.0)
-                        endIf
                     endIf
-                ; TR mode unavailable
+                ; if BitCh is disabled, drop all ammo
                 else
-                    ; check ammo amount and if weapon can chamber ammo
-                    if currentAmmo != 0 && (instanceData.getKeywords(thisInstance)).find(reloadScript.disableChamberedReload) == -1
-                        ; this weapon can chamber a round, so we drop 1 less
-                        playerRef.removeItem(chamberedAmmo, currentAmmo - 1, true, none)
-                        if ammoDropDelete == false
-                            (playerRef.placeAtMe(chamberedAmmo as form, currentAmmo - 1, false, false, true)).moveTo(playerRef, afZOffset = 33.0)
-                        endIf
-                    ; if weapon can't chamber ammo - drop everything
-                    elseIf currentAmmo != 0
-                        playerRef.removeItem(chamberedAmmo, currentAmmo, true, none)
-                        if ammoDropDelete == false
-                            (playerRef.placeAtMe(chamberedAmmo as form, currentAmmo, false, false, true)).moveTo(playerRef, afZOffset = 33.0)
-                        endIf
+                    playerRef.removeItem(chamberedAmmo, currentAmmo, true, none)
+                    if ammoDropDelete == false
+                        (playerRef.placeAtMe(chamberedAmmo as form, currentAmmo, false, false, true)).moveTo(playerRef, afZOffset = 33.0)
                     endIf
-                endIf
-            ; if BitCh is disabled, drop all ammo
-            else
-                playerRef.removeItem(chamberedAmmo, currentAmmo, true, none)
-                if ammoDropDelete == false
-                    (playerRef.placeAtMe(chamberedAmmo as form, currentAmmo, false, false, true)).moveTo(playerRef, afZOffset = 33.0)
                 endIf
             endIf
         endIf
@@ -185,12 +263,8 @@ event onAnimationEvent(objectReference akSender, string sEvent)
     
     ; player finishes reloading
     if sEvent == "reloadStateExit"
-        ;/ gets set to true after jumping is disabled because
-        using inputLayer.isJumpingEnabled() == false leads to a
-        bunch of errors in the debug console presumably due to
-        the inputLayer not being created unless ammo drop is
-        activated. Too lazy to fix and this works so w/e /;
-        if ammoDropCooldown == true
+        ; check if the inputEnableLayer has been created
+        if inputLayer as inputEnableLayer
             debug.trace("jumping disabled")
             ; enable jumping
             inputLayer.enableJumping(true)

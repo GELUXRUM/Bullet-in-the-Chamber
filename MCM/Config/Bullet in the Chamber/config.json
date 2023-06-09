@@ -279,7 +279,7 @@
 				{
 					"text": "Delete Ammo On Reload",
 					"type": "switcher",
-					"help": "Enable Ammo Drop must also be ON. Deletes the ammo completely instead of dropping it on the ground. ",
+					"help": "Enable Ammo Drop must also be ON. Deletes the ammo completely instead of dropping it on the ground.",
 					"valueOptions": {
 						"sourceType": "PropertyValueBool",
 						"sourceForm": "Bullet in the Chamber.esp|706",
@@ -287,7 +287,17 @@
 					}
 				},
 				{
-					"text": "<font size='14' color='#AAAAAA'>• To disable this on certain weapons, add the keyword <b>BitCh_CantDropAmmo</b>.</font>",
+					"text": "Drop Ammo Only During Combat",
+					"type": "switcher",
+					"help": "Same features, just that it's now during combat only.",
+					"valueOptions": {
+						"sourceType": "PropertyValueBool",
+						"sourceForm": "Bullet in the Chamber.esp|706",
+						"propertyName": "ammoDropCombat"
+					}
+				},
+				{
+					"text": "<font size='14' color='#AAAAAA'>• To disable ammo drop completely on certain weapons, add the keyword <b>BitCh_CantDropAmmo</b>.</font>",
 					"html": true,
 					"type": "text"
 				}
