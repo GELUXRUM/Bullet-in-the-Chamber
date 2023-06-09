@@ -1,3 +1,10 @@
+1.3 - GELUXRUM
+New features:
+Toggle for ammo drop to only happen during combat
+
+Changes:
+Adjust some MCM text
+
 1.2.2 - GELUXRUM
 Changes:
 Jumping is now blocked only during ammo drop.
