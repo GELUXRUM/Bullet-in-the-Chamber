@@ -17,6 +17,8 @@ group MCM_Booleans
     {track if ammo check shows ammo name}
     bool property reserveNotifEnabled = true auto
     {track if ammo check shows ammo in inventory}
+    bool property magAmountEnabled = true auto
+    {track if ammo check shows mag amount}
     bool property modeFallUI = false auto
     {track if FallUI is on}
     bool property lowerNormal = true auto
@@ -131,6 +133,8 @@ function estimateAmmoCheck()
     int currentAmmo = UI.get( "HUDMenu", "root.RightMeters_mc.AmmoCount_mc.ClipCount_tf.text" ) as int
     ; the amount of ammo that is left in the player's inventory
     int reserveAmmo = playerRef.getItemCount(chamberedAmmo as Form) as int - CurrentAmmo
+    ; the smaller amount of mags reserve ammo could fill up
+    int magsLeft = Math.Ceiling(reserveAmmo/maxAmmo) as int
     ;/ ammo currently left in the weapon's magazine as a %. Must be cast as
     float, otherwise it doesn't work properly /;
     float ammoPercentage = (currentAmmo as float) / (maxAmmo as float) * 100
@@ -160,21 +164,26 @@ function estimateAmmoCheck()
         message is displayed to give the player a rough idea
         of how much is left /;
         if (instancedata.GetKeywords(thisInstance)).find(exactCheckCapability) == -1
+            string notifOutput
             if ammoPercentage == 100.0
-                debug.notification("Full")
+                notifOutput += "Full"
             elseIf ammoPercentage <= 60.0 && ammoPercentage >= 40.0 
-                debug.notification("About half")
+                notifOutput += "About half"
             elseIf ammoPercentage == 0.0
-                debug.notification("Empty")
+                notifOutput += "Empty"
             elseIf ammoPercentage >= MCM_AlmostFull.GetValue() as float
-                debug.notification("Almost full")
+                notifOutput += "Almost full"
             elseIf ammoPercentage > 60.0
-                debug.notification("More than half")
+                notifOutput += "More than half"
             elseIf ammoPercentage > MCM_AlmostEmpty.GetValue() as float
-                debug.notification("Less than half")
+                notifOutput += "Less than half"
             else
-                debug.notification("Almost empty")
+                notifOutput += "Almost empty"
             endIf
+            if magAmountEnabled
+                notifOutput += ". " + magsLeft as string + " mags left"
+            endIf
+            debug.notification(notifOutput)
         else
             debug.notification(currentAmmo as string + "/" + maxAmmo as string)
         endIf
@@ -200,6 +209,8 @@ function exactAmmoCheck()
     int currentAmmo = UI.get( "HUDMenu", "root.RightMeters_mc.AmmoCount_mc.ClipCount_tf.text" ) as int
     ; the amount of ammo that is left in the player's inventory
     int reserveAmmo = playerRef.getItemCount(chamberedAmmo as Form) as int - CurrentAmmo
+    ; the smaller amount of mags reserve ammo could fill up
+    int magsLeft = Math.Ceiling(reserveAmmo/maxAmmo) as int
     ;/ ammo currently left in the weapon's magazine as a %. Must be cast as
     float, otherwise it doesn't work properly /;
     float ammoPercentage = (currentAmmo as float) / (maxAmmo as float) * 100
@@ -239,6 +250,11 @@ function exactAmmoCheck()
             if reserveNotifEnabled == true
                 output = output + " | " + (reserveAmmo) as string
             endIf
+            ;/ check if the player wants to see how many mags they could
+            fill up with their reserve ammo /;
+            if magAmountEnabled == true
+                output = output + " | " + (magsLeft) as string
+            endIf
             ; check if the player wants to be told what ammo they're using
             if ammoNameEnabled == true
                 ;/ using a bullet point here to keep consistency and not break
@@ -252,6 +268,9 @@ function exactAmmoCheck()
             endIf
             if reserveNotifEnabled == true
                 output = output + " • " + (reserveAmmo) as string
+            endIf
+            if magAmountEnabled == true
+                output = output + " • " + (magsLeft) as string
             endIf
             if ammoNameEnabled == true
                 output = output + " • " + ChamberedAmmo.GetName() as string 

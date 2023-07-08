@@ -134,6 +134,16 @@
 					}
 				},
 				{
+					"text": "Include Mag Amount",
+					"type": "switcher",
+					"help": "Tells you how many magazines could be filled with reserve ammo.",
+					"valueOptions": {
+						"sourceType": "PropertyValueBool",
+						"sourceForm": "Bullet in the Chamber.esp|701",
+						"propertyName": "MagAmountEnabled"
+					}
+				},
+				{
 					"text": "Include Ammo Name",
 					"type": "switcher",
 					"help": "Tells you what ammo is currently being used by the weapon.",
