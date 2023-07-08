@@ -56,6 +56,7 @@ EndGroup
 
 group keywords
     keyword property exactCheckCapability auto
+    keyword property chamberedReload auto
 EndGroup
 
 group sounds
@@ -133,8 +134,16 @@ function estimateAmmoCheck()
     int currentAmmo = UI.get( "HUDMenu", "root.RightMeters_mc.AmmoCount_mc.ClipCount_tf.text" ) as int
     ; the amount of ammo that is left in the player's inventory
     int reserveAmmo = playerRef.getItemCount(chamberedAmmo as Form) as int - CurrentAmmo
-    ; the smaller amount of mags reserve ammo could fill up
-    int magsLeft = Math.Ceiling(reserveAmmo/maxAmmo) as int
+    ; the smallest amount of mags reserve ammo could fill up
+    float magsLeft = Math.Ceiling((reserveAmmo as float)/(maxAmmo as float))
+    int magAmount = magsLeft as int
+    ;/ if weapon has the BitCh keyword, then its maxAmmo will be 1 higher and thus
+    skew the final value/;
+    if (instanceData.getKeywords(thisInstance)).find(chamberedReload) != -1
+        int actualMax = maxAmmo - 1
+        magsLeft = Math.Ceiling((reserveAmmo as float)/(actualMax as float))
+        magAmount = magsLeft as int
+    endIf
     ;/ ammo currently left in the weapon's magazine as a %. Must be cast as
     float, otherwise it doesn't work properly /;
     float ammoPercentage = (currentAmmo as float) / (maxAmmo as float) * 100
@@ -181,7 +190,7 @@ function estimateAmmoCheck()
                 notifOutput += "Almost empty"
             endIf
             if magAmountEnabled
-                notifOutput += ". " + magsLeft as string + " mags left"
+                notifOutput += ". " + magAmount as string + " mags left"
             endIf
             debug.notification(notifOutput)
         else
@@ -209,8 +218,16 @@ function exactAmmoCheck()
     int currentAmmo = UI.get( "HUDMenu", "root.RightMeters_mc.AmmoCount_mc.ClipCount_tf.text" ) as int
     ; the amount of ammo that is left in the player's inventory
     int reserveAmmo = playerRef.getItemCount(chamberedAmmo as Form) as int - CurrentAmmo
-    ; the smaller amount of mags reserve ammo could fill up
-    int magsLeft = Math.Ceiling(reserveAmmo/maxAmmo) as int
+    ; the smallest amount of mags reserve ammo could fill up
+    float magsLeft = Math.Ceiling((reserveAmmo as float)/(maxAmmo as float))
+    int magAmount = magsLeft as int
+    ;/ if weapon has the BitCh keyword, then its maxAmmo will be 1 higher and thus
+    skew the final value/;
+    if (instanceData.getKeywords(thisInstance)).find(chamberedReload) != -1
+        int actualMax = maxAmmo - 1
+        magsLeft = Math.Ceiling((reserveAmmo as float)/(actualMax as float))
+        magAmount = magsLeft as int
+    endIf
     ;/ ammo currently left in the weapon's magazine as a %. Must be cast as
     float, otherwise it doesn't work properly /;
     float ammoPercentage = (currentAmmo as float) / (maxAmmo as float) * 100
@@ -253,7 +270,7 @@ function exactAmmoCheck()
             ;/ check if the player wants to see how many mags they could
             fill up with their reserve ammo /;
             if magAmountEnabled == true
-                output = output + " | " + (magsLeft) as string
+                output = output + " | " + (magAmount) as string
             endIf
             ; check if the player wants to be told what ammo they're using
             if ammoNameEnabled == true
@@ -270,7 +287,7 @@ function exactAmmoCheck()
                 output = output + " • " + (reserveAmmo) as string
             endIf
             if magAmountEnabled == true
-                output = output + " • " + (magsLeft) as string
+                output = output + " • " + (magAmount) as string
             endIf
             if ammoNameEnabled == true
                 output = output + " • " + ChamberedAmmo.GetName() as string 
